@@ -83,59 +83,6 @@ namespace transport_catalogue {
 
 
 
-		class StopsCatalogue {
-		public:
-
-			StopsCatalogue() {}
-
-			StopsCatalogue(std::vector<Stop> stops) {
-				for (Stop s : stops) {
-					AddStop(s);
-				}
-
-			};
-
-
-			void AddStop(const Stop& stop) {
-				stops_.push_back(std::move(stop));
-				stops_index_[stops_.back().GetName()] = &stops_.back();
-			}
-
-			Stop* FindStop(const std::string& name) const {
-				if (stops_index_.count(name) != 0) {
-					return stops_index_.at(name);
-				}
-				else {
-					return nullptr;
-				}
-			}
-
-			void SetDistances(Stop* stop1, Stop* stop2, int distance) {
-				distances_[std::make_pair(stop1, stop2)] = distance;
-			}
-
-			int GetDistance(Stop* stop1, Stop* stop2) {
-				if (distances_.count(std::make_pair(stop1, stop2)) != 0) {
-					return distances_[std::make_pair(stop1, stop2)];
-				}
-				else
-					if (distances_.count(std::make_pair(stop2, stop1)) != 0) {
-
-						return distances_[std::make_pair(stop2, stop1)];
-					}
-					else {
-						throw std::invalid_argument("Cannot find distanse" + stop1->GetName() + stop2->GetName());
-					}
-			}
-
-		private:
-
-
-			std::deque<Stop> stops_;
-			std::unordered_map<std::string_view, Stop*, StopHasher>  stops_index_;
-			std::unordered_map<std::pair<Stop*, Stop*>, int, DistHasher> distances_;
-
-		};
 
 
 
@@ -182,19 +129,53 @@ namespace transport_catalogue {
 		};
 
 
-		class BusesCatalogue {
+		
+
+
+
+		class TransportCatalogue {
 		public:
+			TransportCatalogue() {};
 
+//Stops Methods
 
-			BusesCatalogue() {}
-
-			BusesCatalogue(std::vector<Bus> buses) {
-				for (auto b : buses) {
-					AddBus(b);
-				}
-
+			void AddStop(const Stop& stop) {
+				stops_.push_back(std::move(stop));
+				stops_index_[stops_.back().GetName()] = &stops_.back();
 			}
 
+			Stop* FindStop(const std::string& name) const {
+				if (stops_index_.count(name) != 0) {
+					return stops_index_.at(name);
+				}
+				else {
+					return nullptr;
+				}
+			}
+
+			void SetDistances(Stop* stop1, Stop* stop2, int distance) {
+				distances_[std::make_pair(stop1, stop2)] = distance;
+			}
+
+			int GetDistance(Stop* stop1, Stop* stop2) {
+				if (distances_.count(std::make_pair(stop1, stop2)) != 0) {
+					return distances_[std::make_pair(stop1, stop2)];
+				}
+				else
+					if (distances_.count(std::make_pair(stop2, stop1)) != 0) {
+
+						return distances_[std::make_pair(stop2, stop1)];
+					}
+					else {
+						throw std::invalid_argument("Cannot find distanse" + stop1->GetName() + stop2->GetName());
+					}
+			}
+
+
+
+
+
+//Bus Methods
 			void AddBus(Bus& bus) {
 				buses_.push_back(std::move(bus));
 				buses_index_[buses_.back().GetName()] = &buses_.back();
@@ -228,21 +209,17 @@ namespace transport_catalogue {
 			}
 
 
+
 		private:
+			//stops filds
+			std::deque<Stop> stops_;
+			std::unordered_map<std::string_view, Stop*, StopHasher>  stops_index_;
+			std::unordered_map<std::pair<Stop*, Stop*>, int, DistHasher> distances_;
+
+			//bus fields
+
 			std::deque<Bus> buses_;
 			std::unordered_map<std::string, Bus*, BusHasher>  buses_index_;
-
-		};
-
-
-
-		class TransportCatalogue {
-		public:
-			TransportCatalogue() {};
-
-			BusesCatalogue buses_catalogue;
-			StopsCatalogue stops_catalogue;
-
 
 		};
 

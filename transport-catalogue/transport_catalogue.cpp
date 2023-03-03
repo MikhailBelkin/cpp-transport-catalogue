@@ -27,7 +27,7 @@ std::vector<RequestQueue::QueryResult> RequestQueue::ProcessQueue() {
 		for (Query q : requests_.at(ADD_STOP)) {
 			
 			Stop s(q.name_, q.coordinates_);
-			tc_->stops_catalogue.AddStop(s);
+			tc_->AddStop(s);
 
 			if (q.distances.size() > 0) {
 				dist.merge(q.distances);
@@ -35,8 +35,8 @@ std::vector<RequestQueue::QueryResult> RequestQueue::ProcessQueue() {
 		}
 		for (auto [stops, distance] : dist) {
 			//std::unordered_map<std::pair<std::string, std::string>, int> distances;
-			tc_->stops_catalogue.SetDistances(tc_->stops_catalogue.FindStop(stops.first),
-				tc_->stops_catalogue.FindStop(stops.second),
+			tc_->SetDistances(tc_->FindStop(stops.first),
+				tc_->FindStop(stops.second),
 				distance);
 		}
 
@@ -45,7 +45,7 @@ std::vector<RequestQueue::QueryResult> RequestQueue::ProcessQueue() {
 		for (Query q : requests_.at(ADD_REGULAR_BUS)) {
 			std::vector<Stop*> s;
 			for (std::string& stop : q.stops) {
-				Stop* s_ptr = tc_->stops_catalogue.FindStop(stop);
+				Stop* s_ptr = tc_->FindStop(stop);
 				if (s_ptr) {
 					s.push_back(s_ptr);
 				}
@@ -55,7 +55,7 @@ std::vector<RequestQueue::QueryResult> RequestQueue::ProcessQueue() {
 
 			}
 			Bus b(q.name_, s);
-			tc_->buses_catalogue.AddBus(b);
+			tc_->AddBus(b);
 		}
 	}
 
@@ -63,7 +63,7 @@ std::vector<RequestQueue::QueryResult> RequestQueue::ProcessQueue() {
 		for (Query q : requests_.at(ADD_RING_BUS)) {
 			std::vector<Stop*> s;
 			for (std::string& stop : q.stops) {
-				Stop* s_ptr = tc_->stops_catalogue.FindStop(stop);
+				Stop* s_ptr = tc_->FindStop(stop);
 				if (s_ptr) {
 					s.push_back(s_ptr);
 				}
@@ -79,7 +79,7 @@ std::vector<RequestQueue::QueryResult> RequestQueue::ProcessQueue() {
 				s.push_back(s[i]);
 			}
 			Bus b(q.name_, s);
-			tc_->buses_catalogue.AddBus(b);
+			tc_->AddBus(b);
 		}
 	}
 
@@ -93,9 +93,9 @@ std::vector<RequestQueue::QueryResult> RequestQueue::ProcessQueue() {
 				coord.lat = 0;
 				coord.lng = 0;
 				std::string prev_stop;
-				if (tc_->buses_catalogue.FindBus(q.name_) != nullptr) {  //автобуса не существует. остановки не заполняем, длинну маршрута тоже
+				if (tc_->FindBus(q.name_) != nullptr) {  //автобуса не существует. остановки не заполняем, длинну маршрута тоже
 					res.found = true;
-					for (auto stop : tc_->buses_catalogue.FindBus(q.name_)->GetBusInfo()) {
+					for (auto stop : tc_->FindBus(q.name_)->GetBusInfo()) {
 						res.stops.push_back(stop->GetName());
 						if (coord.lat == 0.0 && coord.lng == 0.0) {
 							//std::cout<<"0!"<<stop->GetName()<< std::endl;
@@ -106,9 +106,9 @@ std::vector<RequestQueue::QueryResult> RequestQueue::ProcessQueue() {
 
 							//std::cout<<coord.lat<<"," <<coord.lng<<" "<< stop->GetName()<< std::endl;
 							res.track_lenght += ComputeDistance(coord, stop->GetCoordonates()); 
-							res.track_distance += tc_->stops_catalogue.GetDistance(
-								tc_->stops_catalogue.FindStop(prev_stop),
-								tc_->stops_catalogue.FindStop(stop->GetName())
+							res.track_distance += tc_->GetDistance(
+								tc_->FindStop(prev_stop),
+								tc_->FindStop(stop->GetName())
 							);
 							prev_stop = stop->GetName();
 							coord = stop->GetCoordonates();
@@ -125,9 +125,9 @@ std::vector<RequestQueue::QueryResult> RequestQueue::ProcessQueue() {
 				QueryResult res;
 				res.name_ = q.name_;
 				res.query_type_ = STOP_INFO;
-				if (tc_->stops_catalogue.FindStop(q.name_) != nullptr) {
+				if (tc_->FindStop(q.name_) != nullptr) {
 					res.found = true;
-					for (auto bus : tc_->buses_catalogue.GetBusesForStop(q.name_)) {
+					for (auto bus : tc_->GetBusesForStop(q.name_)) {
 						res.buses.push_back(bus.GetName());
 					}
 				}
