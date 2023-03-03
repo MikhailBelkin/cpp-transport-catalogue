@@ -139,74 +139,24 @@ namespace transport_catalogue {
 
 //Stops Methods
 
-			void AddStop(const Stop& stop) {
-				stops_.push_back(std::move(stop));
-				stops_index_[stops_.back().GetName()] = &stops_.back();
-			}
+			void AddStop(const Stop& stop);
 
-			Stop* FindStop(const std::string& name) const {
-				if (stops_index_.count(name) != 0) {
-					return stops_index_.at(name);
-				}
-				else {
-					return nullptr;
-				}
-			}
+			Stop* FindStop(const std::string& name) const;
 
-			void SetDistances(Stop* stop1, Stop* stop2, int distance) {
-				distances_[std::make_pair(stop1, stop2)] = distance;
-			}
+			void SetDistances(Stop* stop1, Stop* stop2, int distance);
 
-			int GetDistance(Stop* stop1, Stop* stop2) {
-				if (distances_.count(std::make_pair(stop1, stop2)) != 0) {
-					return distances_[std::make_pair(stop1, stop2)];
-				}
-				else
-					if (distances_.count(std::make_pair(stop2, stop1)) != 0) {
-
-						return distances_[std::make_pair(stop2, stop1)];
-					}
-					else {
-						throw std::invalid_argument("Cannot find distanse" + stop1->GetName() + stop2->GetName());
-					}
-			}
+			int GetDistance(Stop* stop1, Stop* stop2);
 
 
 
 
 
 //Bus Methods
-			void AddBus(Bus& bus) {
-				buses_.push_back(std::move(bus));
-				buses_index_[buses_.back().GetName()] = &buses_.back();
+			void AddBus(Bus& bus);
 
-			}
+			Bus* FindBus(const std::string& name);
 
-			Bus* FindBus(const std::string& name) {
-				if (buses_index_.count(name) != 0) {
-					return buses_index_.at(name);
-				}
-				else {
-					return nullptr;
-				}
-			}
-
-			std::vector<Bus> GetBusesForStop(const std::string stop_name) {
-				std::vector<Bus> result;
-				for (auto bus : buses_) {
-					bool yes = false;
-					auto stops = bus.GetBusInfo();
-					for (auto stop : stops) {
-						if (stop->GetName() == stop_name) {
-							yes = true;
-						}
-					}
-					if (yes) {
-						result.push_back(bus);
-					}
-				}
-				return result;
-			}
+			std::vector<Bus> GetBusesForStop(const std::string stop_name);
 
 
 

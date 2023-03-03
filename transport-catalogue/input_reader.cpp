@@ -124,8 +124,7 @@ RequestQueue::Query StopInfo(std::istream& is, std::string_view current) {
 
 
 
-
-	std::istream& operator>>(std::istream& is, std::vector<transport_catalogue::request_queue::RequestQueue::Query>& query_array) {
+std::istream& operator>>(std::istream& is, std::vector<transport_catalogue::request_queue::RequestQueue::Query>& query_array) {
 		int count_queries;
 		//считываем количество запросов на добавление информации
 		std::string input_str;
