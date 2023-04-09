@@ -3,6 +3,8 @@
 #include "svg.h"
 #include "map_renderer.h"
 #include <sstream>
+#include "request_handler.h"
+#include "map_renderer.h"
 
 
 using namespace transport_catalogue;
@@ -11,7 +13,7 @@ using namespace transport;
 
 namespace transport_catalogue_output_json {
 	using namespace std::literals;
-	json::Dict BusInfoOutput( transport_catalogue::request_queue::RequestQueue::QueryResult& element) {
+	json::Dict BusInfoOutput( request_queue::RequestQueue::QueryResult& element) {
 		json::Dict info;
 
 		info["request_id"s] = element.id;
@@ -32,7 +34,7 @@ namespace transport_catalogue_output_json {
 
 
 
-	json::Dict StopOutputInfo( transport_catalogue::request_queue::RequestQueue::QueryResult& element) {
+	json::Dict StopOutputInfo(request_queue::RequestQueue::QueryResult& element) {
 		json::Dict info;
 		json::Array buses;
 
@@ -59,7 +61,7 @@ namespace transport_catalogue_output_json {
 	}
 
 
-	json::Dict StopOutputInfo(transport_catalogue::request_queue::RequestQueue::QueryResult& element, std::string& map) {
+	json::Dict StopOutputInfo(request_queue::RequestQueue::QueryResult& element, std::string& map) {
 		json::Dict info;
 		json::Array buses;
 
@@ -75,7 +77,7 @@ namespace transport_catalogue_output_json {
 
 
 	
-	std::ostream& operator<<(std::ostream& os, std::vector<transport_catalogue::request_queue::RequestQueue::QueryResult>& query_array) {
+	std::ostream& operator<<(std::ostream& os, std::vector<request_queue::RequestQueue::QueryResult>& query_array) {
 		if (query_array.empty()) {
 
 			return os;
@@ -109,192 +111,8 @@ namespace transport_catalogue_output_json {
 
 			case RequestQueue::MAP_INFO:
 			{
-				svg::Document doc;
-				std::vector <RequestQueue::All_Routes::stop> all_stops;
-				size_t color_num = 0;
-				for (auto bus : element.all_routes.buses) {
-
-					// рисуем маршруты
-					svg::Polyline polyline;
-					polyline.SetStrokeColor(element.map_set.color_palette[color_num]);
-					polyline.SetFillColor(svg::NoneColor);
-					polyline.SetStrokeWidth(element.map_set.line_with);
-					polyline.SetStrokeLineCap(svg::StrokeLineCap::ROUND); 
-					polyline.SetStrokeLineJoin(svg::StrokeLineJoin::ROUND);
-					for (auto stop : bus.stops) {
-						const svg::Point coord = element.all_routes.sphere_coord[0]( stop.coordinates_);
-						polyline.AddPoint(coord);
-						if (std::find(all_stops.begin(), all_stops.end(), stop) == all_stops.end()) {
-							all_stops.push_back(stop);
-						}
-					}
-					doc.Add(polyline);
-					if ((color_num + 1) < element.map_set.color_palette.size()) {
-						color_num++;
-					}
-					else {
-						color_num = 0;
-					}
-
-
-				}
-
-				color_num = 0;// заново считаем те же цвета для остановок
-
-				// отрисовка названий маршрутов
-				for (auto bus : element.all_routes.buses) {
-					auto first_stop = bus.stops[0];
-					
-					svg::Text first_stop_text;
-					svg::Text first_stop_undertext;
-
-					first_stop_text.SetData(bus.name);
-					first_stop_undertext.SetData(bus.name);
-
-					first_stop_undertext.SetFillColor(element.map_set.underlayer_color);
-					first_stop_text.SetFillColor(element.map_set.color_palette[color_num]);
-
-					first_stop_undertext.SetStrokeColor(element.map_set.underlayer_color);
-					first_stop_undertext.SetStrokeWidth(element.map_set.underlayer_width);
-					first_stop_undertext.SetStrokeLineCap(svg::StrokeLineCap::ROUND);
-					first_stop_undertext.SetStrokeLineJoin(svg::StrokeLineJoin::ROUND);
-					
-					first_stop_text.SetFontSize(element.map_set.bus_label_font_size);
-					first_stop_undertext.SetFontSize(element.map_set.bus_label_font_size);
-
-					first_stop_text.SetFontFamily("Verdana");
-					first_stop_undertext.SetFontFamily("Verdana");
-
-					first_stop_text.SetFontWeight("bold");
-					first_stop_undertext.SetFontWeight("bold");
-
-					svg::Point coord1 = element.all_routes.sphere_coord[0](first_stop.coordinates_);
-					first_stop_text.SetPosition(coord1);
-					first_stop_undertext.SetPosition(coord1);
-					
-					coord1.x = element.map_set.bus_label_offset.first;
-					coord1.y = element.map_set.bus_label_offset.second;
-					first_stop_text.SetOffset(coord1);
-					first_stop_undertext.SetOffset(coord1);
-
-					doc.Add(first_stop_undertext);
-					doc.Add(first_stop_text);
-					
-					
-
-					auto last_stop = bus.stops[bus.stops.size() / 2]; // так как маршрут кольцевой - последняя остановка в середине
-					if (!bus.is_round && !(first_stop==last_stop) ) {
-						
-						svg::Text last_stop_text;
-						svg::Text last_stop_undertext;
-
-						last_stop_text.SetData(bus.name);
-						last_stop_undertext.SetData(bus.name);
-
-
-						last_stop_text.SetFillColor(element.map_set.color_palette[color_num]);
-						last_stop_undertext.SetFillColor(element.map_set.underlayer_color);
-
-
-						last_stop_undertext.SetStrokeColor(element.map_set.underlayer_color);
-						last_stop_undertext.SetStrokeWidth(element.map_set.underlayer_width);
-						last_stop_undertext.SetStrokeLineCap(svg::StrokeLineCap::ROUND);
-						last_stop_undertext.SetStrokeLineJoin(svg::StrokeLineJoin::ROUND);
-
-						last_stop_text.SetFontSize(element.map_set.bus_label_font_size);
-						last_stop_undertext.SetFontSize(element.map_set.bus_label_font_size);
-
-						last_stop_text.SetFontFamily("Verdana");
-						last_stop_undertext.SetFontFamily("Verdana");
-
-						last_stop_text.SetFontWeight("bold");
-						last_stop_undertext.SetFontWeight("bold");
-
-						svg::Point coord1 = element.all_routes.sphere_coord[0](last_stop.coordinates_);
-						last_stop_text.SetPosition(coord1);
-						last_stop_undertext.SetPosition(coord1);
-
-						coord1.x = element.map_set.bus_label_offset.first;
-						coord1.y = element.map_set.bus_label_offset.second;
-						last_stop_text.SetOffset(coord1);
-						last_stop_undertext.SetOffset(coord1);
-
-						doc.Add(last_stop_undertext);
-						doc.Add(last_stop_text);
-						
-					}
-
-
-					if ((color_num + 1) < element.map_set.color_palette.size()) {
-						color_num++;
-					}
-					else {
-						color_num = 0;
-					}
-				}
-
-				// выводим все остановки
-				{
-					std::sort(all_stops.begin(), all_stops.end(), [](RequestQueue::All_Routes::stop lhs, RequestQueue::All_Routes::stop rhs)
-						{
-							return lhs.name < rhs.name;
-						});
-					
-					for (auto stop : all_stops) {
-						svg::Circle stop_circle;
-						svg::Point coord = element.all_routes.sphere_coord[0](stop.coordinates_);
-						stop_circle.SetCenter(coord);
-						stop_circle.SetRadius(element.map_set.stop_radius);
-						stop_circle.SetFillColor("white");
-						doc.Add(stop_circle);
-					}
-
-
-
-				}
-
-				// выводим названия остановок
-				{
-					for (auto stop : all_stops) {
-						svg::Text stop_text;
-						svg::Text stop_undertext;
-
-						stop_text.SetData(stop.name);
-						stop_undertext.SetData(stop.name);
-
-						stop_undertext.SetFillColor(element.map_set.underlayer_color);
-						stop_text.SetFillColor("black");
-
-						stop_undertext.SetStrokeColor(element.map_set.underlayer_color);
-						stop_undertext.SetStrokeWidth(element.map_set.underlayer_width);
-						stop_undertext.SetStrokeLineCap(svg::StrokeLineCap::ROUND);
-						stop_undertext.SetStrokeLineJoin(svg::StrokeLineJoin::ROUND);
-
-						stop_text.SetFontSize(element.map_set.stop_label_font_size);
-						stop_undertext.SetFontSize(element.map_set.stop_label_font_size);
-
-						stop_text.SetFontFamily("Verdana");
-						stop_undertext.SetFontFamily("Verdana");
-
-						svg::Point coord1 = element.all_routes.sphere_coord[0](stop.coordinates_);
-						stop_text.SetPosition(coord1);
-						stop_undertext.SetPosition(coord1);
-
-						coord1.x = element.map_set.stop_label_offset.first;
-						coord1.y = element.map_set.stop_label_offset.second;
-						stop_text.SetOffset(coord1);
-						stop_undertext.SetOffset(coord1);
-
-						doc.Add(stop_undertext);
-						doc.Add(stop_text);
-					}
-				}
-
 				
-				std::ostringstream temp_stream;
-				doc.Render(temp_stream);
-				
-				root.emplace_back(StopOutputInfo(element, temp_stream.str()));
+				root.emplace_back(StopOutputInfo(element, element.map_data.RenderTCMap()));
 
 			}
 			break;
@@ -322,6 +140,7 @@ namespace transport_catalogue_output_json {
 namespace transport_catalogue_input_json {
 
 	using namespace std::literals;
+	using namespace request_queue;
 	
 		RequestQueue::Query AddStop(json::Dict& req) {
 			RequestQueue::Query q;
@@ -391,7 +210,7 @@ namespace transport_catalogue_input_json {
 
 
 		void Load_query(const json::Document &doc, 
-			std::vector<transport_catalogue::request_queue::RequestQueue::Query>& query_array) {
+			std::vector<request_queue::RequestQueue::Query>& query_array) {
 			
 
 
@@ -518,7 +337,7 @@ namespace transport_catalogue_input_json {
 			
 		}
 
-		std::istream& operator>>(std::istream& is, std::vector<transport_catalogue::request_queue::RequestQueue::Query>& query_array) {
+		std::istream& operator>>(std::istream& is, std::vector<request_queue::RequestQueue::Query>& query_array) {
 			
 			Load_query(json::Load(is), query_array);
 			return is;

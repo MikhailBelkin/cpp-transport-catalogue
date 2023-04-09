@@ -9,10 +9,10 @@
 #include <vector>
 #include <deque>
 #include <unordered_map>
-
+#include "request_handler.h"
 
 namespace transport_catalogue_input {
 
-	std::istream& operator>>(std::istream& is, std::vector<transport_catalogue::request_queue::RequestQueue::Query>& query_array);
+	std::istream& operator>>(std::istream& is, std::vector<request_queue::RequestQueue::Query>& query_array);
 
 }

@@ -1,6 +1,8 @@
 #pragma once
 
 namespace geo {
+    const int EarthRadius = 6371000;
+
 
     struct Coordinates {
         double lat; // Широта

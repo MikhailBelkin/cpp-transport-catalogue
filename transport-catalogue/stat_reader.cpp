@@ -1,6 +1,7 @@
 #include "stat_reader.h"
 
 
+
 using namespace transport_catalogue;
 
 using namespace request_queue;
@@ -8,7 +9,7 @@ using namespace transport;
 
 
 
-void BusInfoOutput( std::ostream& os,  transport_catalogue::request_queue::RequestQueue::QueryResult& element) {
+void BusInfoOutput( std::ostream& os,  request_queue::RequestQueue::QueryResult& element) {
     
     os << "Bus " << element.name_ << ": ";
     if (element.found) {
@@ -25,7 +26,7 @@ void BusInfoOutput( std::ostream& os,  transport_catalogue::request_queue::Reque
 
 
 
-void StopOutputInfo(std::ostream& os, transport_catalogue::request_queue::RequestQueue::QueryResult& element) {
+void StopOutputInfo(std::ostream& os, request_queue::RequestQueue::QueryResult& element) {
 
     os << "Stop " << element.name_ << ": ";
     if (element.found) {
@@ -49,7 +50,7 @@ void StopOutputInfo(std::ostream& os, transport_catalogue::request_queue::Reques
 
 
 namespace transport_catalogue_output {
-    std::ostream& operator<<(std::ostream& os, std::vector<transport_catalogue::request_queue::RequestQueue::QueryResult>& query_array) {
+    std::ostream& operator<<(std::ostream& os, std::vector<request_queue::RequestQueue::QueryResult>& query_array) {
         if (query_array.empty()) {
             
             return os;

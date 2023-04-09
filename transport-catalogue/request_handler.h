@@ -1,15 +1,106 @@
 #pragma once
+#include "transport_catalogue.h"
+#include "map_renderer.h"
+#include "geo.h"
 
-/*
- * Здесь можно было бы разместить код обработчика запросов к базе, содержащего логику, которую не
- * хотелось бы помещать ни в transport_catalogue, ни в json reader.
- *
- * В качестве источника для идей предлагаем взглянуть на нашу версию обработчика запросов.
- * Вы можете реализовать обработку запросов способом, который удобнее вам.
- *
- * Если вы затрудняетесь выбрать, что можно было бы поместить в этот файл,
- * можете оставить его пустым.
- */
+
+
+
+namespace request_queue {
+
+	class RequestQueue {
+	public:
+
+		enum QueryType {
+			ADD_STOP,
+			ADD_REGULAR_BUS,
+			ADD_RING_BUS,
+			MAP_SETTINGS,
+			GET_INFO,
+			BUS_INFO,
+			STOP_INFO,
+			MAP_INFO
+		};
+
+
+
+		class QDistHasher {
+		public:
+
+
+			size_t operator()(std::pair<std::string, std::string> stop_dist) const {
+
+				std::hash<std::string> dist_hash;
+				std::string s1 = stop_dist.first + stop_dist.second;
+
+				return dist_hash(s1);
+
+			}
+
+
+		private:
+
+		};
+
+
+
+
+		struct Query {
+			int id;
+			QueryType query_type_;
+			std::string name_;
+			geo::Coordinates coordinates_;
+			std::vector<std::string> stops;
+			std::unordered_map<std::pair<std::string, std::string>, int, QDistHasher> distances;
+			map_render::MapRenderSettings map_set;
+		};
+
+		
+
+		struct QueryResult {
+			int id;
+			QueryType query_type_;
+			std::string name_;
+			geo::Coordinates coordinates_;
+			std::vector<std::string> stops;
+			std::vector<std::string> buses;
+			double track_lenght = 0;
+			double track_distance = 0;
+			bool found;
+			
+			map_render::MapRender map_data;
+
+		};
+
+		
+
+		explicit RequestQueue(transport_catalogue::TransportCatalogue& tc) {
+			tc_ = &tc;
+		}
+
+		void AddRequest(Query& q) {
+			if (q.query_type_ > GET_INFO) {
+				requests_[GET_INFO].push_back(q);
+			}
+			else {
+				requests_[q.query_type_].push_back(q);
+			}
+		}
+
+		std::vector<QueryResult> ProcessQueue();
+		map_render::MapRender::All_Routes GetAllRoutes();
+
+	private:
+		map_render::MapRender map_data_;
+		std::unordered_map<QueryType, std::deque<Query>> requests_;
+		transport_catalogue::TransportCatalogue* tc_;
+	};
+
+
+
+}
+
+
 
 // Класс RequestHandler играет роль Фасада, упрощающего взаимодействие JSON reader-а
 // с другими подсистемами приложения.

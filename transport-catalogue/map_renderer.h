@@ -1,7 +1,9 @@
 #pragma once
 
+
 #include "geo.h"
 #include "svg.h"
+
 
 #include <algorithm>
 #include <cstdlib>
@@ -10,11 +12,13 @@
 #include <vector>
 #include <utility>
 
+
 namespace map_render {
 
     
+    
 
-    struct map_render_settings {
+    struct MapRenderSettings {
         double width;
         double height;
         double padding;
@@ -104,6 +108,51 @@ namespace map_render {
         double min_lon_ = 0;
         double max_lat_ = 0;
         double zoom_coeff_ = 0;
+    };
+
+
+
+    class MapRender {
+            
+        public:
+
+            struct All_Routes {
+                struct stop {
+                    std::string name;
+                    geo::Coordinates coordinates_;
+                    bool operator==(const stop& s) const {
+                        return  this->name == s.name &&
+                            this->coordinates_.lat == s.coordinates_.lat &&
+                            this->coordinates_.lng == s.coordinates_.lng;
+                    }
+                };
+                struct bus {
+                    std::string name;
+                    std::vector<stop> stops;
+                    bool is_round;
+                };
+
+
+                std::vector<bus> buses;
+
+                double track_lenght = 0;
+                double track_distance = 0;
+                std::vector<map_render::SphereProjector> sphere_coord;
+
+
+            };
+
+
+           MapRenderSettings map_set;
+           All_Routes all_routes;
+           
+
+           std::string RenderTCMap();
+
+
+
+
+
     };
 
 }

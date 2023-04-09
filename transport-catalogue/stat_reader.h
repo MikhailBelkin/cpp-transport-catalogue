@@ -8,9 +8,9 @@
 #include "transport_catalogue.h"
 #include <set>
 #include <iomanip>
-
+#include "request_handler.h"
 
 namespace transport_catalogue_output {
 
-    std::ostream& operator<<(std::ostream& os, std::vector<transport_catalogue::request_queue::RequestQueue::QueryResult>& query_array);
+    std::ostream& operator<<(std::ostream& os, std::vector<request_queue::RequestQueue::QueryResult>& query_array);
 }
