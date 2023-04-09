@@ -1,6 +1,6 @@
 #pragma once
 
-#include "geo.h"
+
 #include <string>
 #include <string_view>
 #include <deque>
@@ -10,10 +10,11 @@
 #include <stdexcept>
 #include <cstdint>
 #include <map>
-
+#include "geo.h"
+#include "map_renderer.h"
 
 namespace transport_catalogue {
-
+	using namespace geo;
 
 	namespace transport {
 
@@ -103,10 +104,13 @@ namespace transport_catalogue {
 			std::vector<Stop*>& GetBusInfo() {
 				return track_;
 			}
+			bool isRound() { return is_round_; }
+			void SetRound() { is_round_ = true; }
 
 		private:
 			std::string name_;
 			std::vector<Stop*> track_;
+			bool is_round_ = false;
 		};
 
 
@@ -125,6 +129,7 @@ namespace transport_catalogue {
 
 		private:
 			std::hash<std::string> bus_hash;
+
 
 		};
 
@@ -157,7 +162,7 @@ namespace transport_catalogue {
 			Bus* FindBus(const std::string& name);
 
 			std::vector<Bus> GetBusesForStop(const std::string stop_name);
-
+			std::vector<Bus> GetAllRoutes();
 
 
 		private:
@@ -170,7 +175,7 @@ namespace transport_catalogue {
 
 			std::deque<Bus> buses_;
 			std::unordered_map<std::string, Bus*, BusHasher>  buses_index_;
-
+			
 		};
 
 
@@ -187,9 +192,11 @@ namespace transport_catalogue {
 				ADD_STOP,
 				ADD_REGULAR_BUS,
 				ADD_RING_BUS,
+				MAP_SETTINGS,
 				GET_INFO,
 				BUS_INFO,
-				STOP_INFO
+				STOP_INFO,
+				MAP_INFO
 			};
 
 
@@ -216,15 +223,43 @@ namespace transport_catalogue {
 
 
 			struct Query {
+				int id;
 				QueryType query_type_;
 				std::string name_;
 				Coordinates coordinates_;
 				std::vector<std::string> stops;
 				std::unordered_map<std::pair<std::string, std::string>, int, QDistHasher> distances;
+				map_render::map_render_settings map_set;
 			};
 
+			struct All_Routes {
+				struct stop {
+					std::string name;
+					Coordinates coordinates_;
+					bool operator==(const stop& s) const {
+						return  this->name == s.name &&
+							this->coordinates_.lat == s.coordinates_.lat &&
+							this->coordinates_.lng == s.coordinates_.lng;
+					}
+				};
+				struct bus {
+					std::string name;
+					std::vector<stop> stops;
+					bool is_round;
+					};
+
+				
+				std::vector<bus> buses;
+
+				double track_lenght = 0;
+				double track_distance = 0;
+				std::vector<map_render::SphereProjector> sphere_coord;
+
+
+			};
 
 			struct QueryResult {
+				int id;
 				QueryType query_type_;
 				std::string name_;
 				Coordinates coordinates_;
@@ -233,6 +268,14 @@ namespace transport_catalogue {
 				double track_lenght = 0;
 				double track_distance = 0;
 				bool found;
+				map_render::map_render_settings map_set;
+				All_Routes all_routes;
+				
+			};
+
+			struct MapData {
+				map_render::map_render_settings map_set;
+				All_Routes all_routes;
 			};
 
 			explicit RequestQueue(transport::TransportCatalogue& tc) {
@@ -249,10 +292,10 @@ namespace transport_catalogue {
 			}
 
 			std::vector<QueryResult> ProcessQueue();
-
+			RequestQueue::All_Routes GetAllRoutes();
 
 		private:
-
+			MapData map_data_;
 			std::unordered_map<QueryType, std::deque<Query>> requests_;
 			transport::TransportCatalogue* tc_;
 		};

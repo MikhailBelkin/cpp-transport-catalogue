@@ -83,6 +83,21 @@ std::vector<Bus> TransportCatalogue::GetBusesForStop(const std::string stop_name
 	return result;
 }
 
+std::vector<Bus> TransportCatalogue::GetAllRoutes() {
+	std::vector<Bus> result;
+
+	for (auto bus : buses_) {
+		result.push_back(bus);
+
+		
+	
+	}
+	return result;
+
+
+
+}
+
 
 
 std::vector<RequestQueue::QueryResult> RequestQueue::ProcessQueue() {
@@ -113,8 +128,8 @@ std::vector<RequestQueue::QueryResult> RequestQueue::ProcessQueue() {
 		}
 
 	}
-	if (requests_.count(ADD_REGULAR_BUS) != 0) {
-		for (Query q : requests_.at(ADD_REGULAR_BUS)) {
+	if (requests_.count(ADD_RING_BUS ) != 0) {
+		for (Query q : requests_.at(ADD_RING_BUS)) {
 			std::vector<Stop*> s;
 			for (std::string& stop : q.stops) {
 				Stop* s_ptr = tc_->FindStop(stop);
@@ -127,12 +142,13 @@ std::vector<RequestQueue::QueryResult> RequestQueue::ProcessQueue() {
 
 			}
 			Bus b(q.name_, s);
+			b.SetRound();
 			tc_->AddBus(b);
 		}
 	}
 
-	if (requests_.count(ADD_RING_BUS) != 0) {
-		for (Query q : requests_.at(ADD_RING_BUS)) {
+	if (requests_.count(ADD_REGULAR_BUS) != 0) {
+		for (Query q : requests_.at(ADD_REGULAR_BUS)) {
 			std::vector<Stop*> s;
 			for (std::string& stop : q.stops) {
 				Stop* s_ptr = tc_->FindStop(stop);
@@ -151,14 +167,32 @@ std::vector<RequestQueue::QueryResult> RequestQueue::ProcessQueue() {
 				s.push_back(s[i]);
 			}
 			Bus b(q.name_, s);
+			
 			tc_->AddBus(b);
 		}
 	}
 
+	if (requests_.count(MAP_SETTINGS) != 0) {
+		for (Query q : requests_.at(MAP_SETTINGS)) {
+			if (q.query_type_ == MAP_SETTINGS) {
+				QueryResult res;
+				res.query_type_ = MAP_SETTINGS;
+				map_data_.map_set = q.map_set;
+				map_data_.all_routes = GetAllRoutes();
+
+				result.push_back(res);
+			}
+		}
+	}
+
+
+
 	if (requests_.count(GET_INFO) != 0) {
+
 		for (Query q : requests_.at(GET_INFO)) {
 			if (q.query_type_ == BUS_INFO) {
 				QueryResult res;
+				res.id = q.id;
 				res.name_ = q.name_;
 				res.query_type_ = BUS_INFO;
 				Coordinates coord;
@@ -195,6 +229,7 @@ std::vector<RequestQueue::QueryResult> RequestQueue::ProcessQueue() {
 			}
 			if (q.query_type_ == STOP_INFO) {
 				QueryResult res;
+				res.id = q.id;
 				res.name_ = q.name_;
 				res.query_type_ = STOP_INFO;
 				if (tc_->FindStop(q.name_) != nullptr) {
@@ -208,8 +243,17 @@ std::vector<RequestQueue::QueryResult> RequestQueue::ProcessQueue() {
 				}
 				result.push_back(res);
 			}
-
+			if (q.query_type_ == MAP_INFO) {
+				QueryResult res;
+				res.id = q.id;
+				res.query_type_ = MAP_INFO;
+				res.all_routes = map_data_.all_routes;
+				res.map_set = map_data_.map_set;
+				result.push_back(res);
+			}
+			
 		}
+	
 	}
 
 	
@@ -217,4 +261,53 @@ std::vector<RequestQueue::QueryResult> RequestQueue::ProcessQueue() {
 	
 
 	return result;
+}
+
+
+
+RequestQueue::All_Routes RequestQueue::GetAllRoutes() {
+	RequestQueue::All_Routes result;
+	std::vector<Bus> buses;
+	buses = tc_->GetAllRoutes();
+	std::sort(buses.begin(), buses.end(), [](Bus lhs, Bus rhs)
+		{
+			return lhs.GetName() < rhs.GetName();
+		});
+	std::vector<geo::Coordinates> points;
+	for (auto bus : buses) {
+		RequestQueue::All_Routes::bus current_bus;
+		std::vector<RequestQueue::All_Routes::stop> current_bus_stops;
+		std::vector<Stop*> stops;
+		current_bus.name = bus.GetName();
+		current_bus.is_round = bus.isRound();
+		stops = bus.GetBusInfo();
+		for (Stop* stop:stops ){
+			RequestQueue::All_Routes::stop stop_for_save;
+			stop_for_save.name = stop->GetName();
+			stop_for_save.coordinates_ = stop->GetCoordonates();
+			points.push_back(stop_for_save.coordinates_);
+			current_bus_stops.push_back(stop_for_save);
+
+		}
+		current_bus.stops = current_bus_stops;
+
+
+		result.buses.push_back(current_bus);
+		
+
+	}
+
+	result.sphere_coord.push_back(
+		map_render::SphereProjector(
+			points.begin(),
+			points.end(),
+			map_data_.map_set.width,
+			map_data_.map_set.height,
+			map_data_.map_set.padding
+		)
+	);
+
+
+	return result;
+
 }

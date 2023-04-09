@@ -5,15 +5,24 @@
 #include <string>
 #include <iostream>
 #include <cassert>
-#include "input_reader.h"
-#include "stat_reader.h"
+
+#include <chrono>
+#include <sstream>
+#include <string_view>
+
+
+//#include "input_reader.h"
+//#include "stat_reader.h"
+#include "json.h"
+#include "json_reader.h"
+
 
 using namespace std;
 using namespace transport_catalogue;
 using namespace transport;
 using namespace request_queue;
-using namespace transport_catalogue_input;
-using namespace transport_catalogue_output;
+using namespace transport_catalogue_input_json;
+using namespace transport_catalogue_output_json;
 
 
 /*
@@ -92,7 +101,7 @@ void TestQueue() {
 }
 */
 
-
+/*
 
 
 void TestStdInputOutput() {
@@ -111,10 +120,33 @@ void TestStdInputOutput() {
 
 }
 
+*/
+
+void TestJson() {
+	
+	//auto doc = LoadJSON(inputdata);
+	TransportCatalogue t;
+	RequestQueue rq(t);
+	std::vector<RequestQueue::Query> queries;
+	//Load_query(doc, queries);
+	cin >> queries;
+
+	
+	for (auto q : queries) {
+		rq.AddRequest(q);
+	}
+	vector<RequestQueue::QueryResult> res = rq.ProcessQueue();
+	
+
+	cout << res;
+	return;
+}
+
 int main() {
 	//Test_Catalogue();
 	//TestQueue();
-	TestStdInputOutput();
+	//TestStdInputOutput();
+	TestJson();
 
 	return 0;
 }
