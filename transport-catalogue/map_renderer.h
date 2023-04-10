@@ -147,11 +147,13 @@ namespace map_render {
            All_Routes all_routes;
            
 
-           std::string RenderTCMap();
+           std::string RenderMap();
 
-
-
-
+    private:
+        svg::Polyline RenderBus(const MapRender::All_Routes::bus& bus, size_t color_num, std::vector <All_Routes::stop>& all_stops);
+        std::pair<svg::Text, svg::Text > RenderBusNames(const MapRender::All_Routes::bus& bus, size_t color_num, geo::Coordinates coord);
+        std::pair<svg::Text, svg::Text> RenderStopNames(const MapRender::All_Routes::stop& stop);
+        svg::Circle RenderStopCirlce(const MapRender::All_Routes::stop& stop);
 
     };
 

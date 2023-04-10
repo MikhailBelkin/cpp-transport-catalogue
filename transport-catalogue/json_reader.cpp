@@ -93,33 +93,30 @@ namespace transport_catalogue_output_json {
 			//req_num++;
 			switch (element.query_type_) {
 
-			case RequestQueue::BUS_INFO:
+				case RequestQueue::BUS_INFO:
+
+					root.emplace_back(BusInfoOutput(element));
+
+					break;
+
+				case RequestQueue::STOP_INFO:
+
+					root.emplace_back(StopOutputInfo(element));
+
+					break;
 
 
-				root.emplace_back(BusInfoOutput(element));
-
-
-
-				break;
-
-			case RequestQueue::STOP_INFO:
-
-				root.emplace_back(StopOutputInfo(element));
-
-				break;
-
-
-			case RequestQueue::MAP_INFO:
-			{
+				case RequestQueue::MAP_INFO:
 				
-				root.emplace_back(StopOutputInfo(element, element.map_data.RenderTCMap()));
+				
+					root.emplace_back(StopOutputInfo(element, element.map_data.RenderMap()));
 
-			}
-			break;
-
-			default:
-
+				
 				break;
+
+				default:
+
+					break;
 
 			}
 
@@ -209,7 +206,7 @@ namespace transport_catalogue_input_json {
 
 
 
-		void Load_query(const json::Document &doc, 
+		void LoadQuery(const json::Document &doc, 
 			std::vector<request_queue::RequestQueue::Query>& query_array) {
 			
 
@@ -339,7 +336,7 @@ namespace transport_catalogue_input_json {
 
 		std::istream& operator>>(std::istream& is, std::vector<request_queue::RequestQueue::Query>& query_array) {
 			
-			Load_query(json::Load(is), query_array);
+			LoadQuery(json::Load(is), query_array);
 			return is;
 		}
 
