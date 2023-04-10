@@ -82,8 +82,8 @@ std::vector<RequestQueue::QueryResult> RequestQueue::ProcessQueue() {
 			if (q.query_type_ == MAP_SETTINGS) {
 				QueryResult res;
 				res.query_type_ = MAP_SETTINGS;
-				map_data_.map_set = q.map_set;
-				map_data_.all_routes = GetAllRoutes();
+				map_data_.SetMapSettings(q.map_set);
+				map_data_.SetAllroutes( GetAllRoutes() );
 
 				result.push_back(res);
 			}
@@ -170,8 +170,8 @@ std::vector<RequestQueue::QueryResult> RequestQueue::ProcessQueue() {
 
 
 
-map_render::MapRender::All_Routes RequestQueue::GetAllRoutes() {
-	map_render::MapRender::All_Routes result;
+map_render::MapRender::AllRoutes RequestQueue::GetAllRoutes() {
+	map_render::MapRender::AllRoutes result;
 	std::vector<Bus> buses;
 	buses = tc_->GetAllRoutes();
 	std::sort(buses.begin(), buses.end(), [](Bus lhs, Bus rhs)
@@ -180,14 +180,14 @@ map_render::MapRender::All_Routes RequestQueue::GetAllRoutes() {
 		});
 	std::vector<geo::Coordinates> points;
 	for (auto bus : buses) {
-		map_render::MapRender::All_Routes::bus current_bus;
-		std::vector<map_render::MapRender::All_Routes::stop> current_bus_stops;
+		map_render::MapRender::AllRoutes::Bus current_bus;
+		std::vector<map_render::MapRender::AllRoutes::Stop> current_bus_stops;
 		std::vector<Stop*> stops;
 		current_bus.name = bus.GetName();
 		current_bus.is_round = bus.isRound();
 		stops = bus.GetBusInfo();
 		for (Stop* stop : stops) {
-			map_render::MapRender::All_Routes::stop stop_for_save;
+			map_render::MapRender::AllRoutes::Stop stop_for_save;
 			stop_for_save.name = stop->GetName();
 			stop_for_save.coordinates_ = stop->GetCoordonates();
 			points.push_back(stop_for_save.coordinates_);
@@ -206,9 +206,9 @@ map_render::MapRender::All_Routes RequestQueue::GetAllRoutes() {
 		map_render::SphereProjector(
 			points.begin(),
 			points.end(),
-			map_data_.map_set.width,
-			map_data_.map_set.height,
-			map_data_.map_set.padding
+			map_data_.GetMapSettings().width,
+			map_data_.GetMapSettings().height,
+			map_data_.GetMapSettings().padding
 		)
 	);
 

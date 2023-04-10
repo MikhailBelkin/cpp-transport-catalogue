@@ -88,7 +88,7 @@ namespace request_queue {
 		}
 
 		std::vector<QueryResult> ProcessQueue();
-		map_render::MapRender::All_Routes GetAllRoutes();
+		map_render::MapRender::AllRoutes GetAllRoutes();
 
 	private:
 		map_render::MapRender map_data_;

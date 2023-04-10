@@ -116,24 +116,24 @@ namespace map_render {
             
         public:
 
-            struct All_Routes {
-                struct stop {
+            struct AllRoutes {
+                struct Stop {
                     std::string name;
                     geo::Coordinates coordinates_;
-                    bool operator==(const stop& s) const {
+                    bool operator==(const Stop& s) const {
                         return  this->name == s.name &&
                             this->coordinates_.lat == s.coordinates_.lat &&
                             this->coordinates_.lng == s.coordinates_.lng;
                     }
                 };
-                struct bus {
+                struct Bus {
                     std::string name;
-                    std::vector<stop> stops;
+                    std::vector<Stop> stops;
                     bool is_round;
                 };
 
 
-                std::vector<bus> buses;
+                std::vector<Bus> buses;
 
                 double track_lenght = 0;
                 double track_distance = 0;
@@ -143,17 +143,40 @@ namespace map_render {
             };
 
 
-           MapRenderSettings map_set;
-           All_Routes all_routes;
+            void SetMapSettings(const MapRenderSettings& set) {
+                map_set_ = set;
+
+            }
            
+            void SetAllroutes(const AllRoutes& routes) {
+                all_routes_ = routes;
+
+            }
+
+
+            const MapRenderSettings& GetMapSettings() {
+                return map_set_;
+
+            }
+
+            const AllRoutes& GetAllroutes() {
+                return all_routes_;
+
+            }
+
 
            std::string RenderMap();
 
     private:
-        svg::Polyline RenderBus(const MapRender::All_Routes::bus& bus, size_t color_num, std::vector <All_Routes::stop>& all_stops);
-        std::pair<svg::Text, svg::Text > RenderBusNames(const MapRender::All_Routes::bus& bus, size_t color_num, geo::Coordinates coord);
-        std::pair<svg::Text, svg::Text> RenderStopNames(const MapRender::All_Routes::stop& stop);
-        svg::Circle RenderStopCirlce(const MapRender::All_Routes::stop& stop);
+        svg::Polyline RenderBus(const MapRender::AllRoutes::Bus& bus, size_t color_num, std::vector <AllRoutes::Stop>& all_stops);
+        std::pair<svg::Text, svg::Text > RenderBusNames(const MapRender::AllRoutes::Bus& bus, size_t color_num, geo::Coordinates coord);
+        std::pair<svg::Text, svg::Text> RenderStopNames(const MapRender::AllRoutes::Stop& stop);
+        svg::Circle RenderStopCirlce(const MapRender::AllRoutes::Stop& stop);
+
+
+        MapRenderSettings map_set_;
+        AllRoutes all_routes_;
+
 
     };
 
