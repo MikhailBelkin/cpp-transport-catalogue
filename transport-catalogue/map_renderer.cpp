@@ -146,8 +146,8 @@ namespace map_render {
 			if (!bus.is_round && !(first_stop == last_stop)) {
 
 				std::pair<svg::Text, svg::Text> route_name = MapRender::RenderBusNames(bus, color_num, last_stop.coordinates_);
-				doc.Add(route_name.first);
 				doc.Add(route_name.second);
+				doc.Add(route_name.first);
 
 			}
 

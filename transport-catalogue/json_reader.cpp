@@ -5,6 +5,7 @@
 #include <sstream>
 #include "request_handler.h"
 #include "map_renderer.h"
+#include "json_builder.h"
 
 
 using namespace transport_catalogue;
@@ -13,6 +14,8 @@ using namespace transport;
 
 namespace transport_catalogue_output_json {
 	using namespace std::literals;
+
+
 	json::Dict BusInfoOutput( request_queue::RequestQueue::QueryResult& element) {
 		json::Dict info;
 
@@ -30,6 +33,8 @@ namespace transport_catalogue_output_json {
 			info["error_message"s]= "not found"s;
 		}
 		return info;
+		
+		
 	}
 
 
@@ -61,7 +66,7 @@ namespace transport_catalogue_output_json {
 	}
 
 
-	json::Dict StopOutputInfo(request_queue::RequestQueue::QueryResult& element, std::string& map) {
+	json::Dict StopOutputInfo(request_queue::RequestQueue::QueryResult& element, std::string map) {
 		json::Dict info;
 		json::Array buses;
 
@@ -145,7 +150,7 @@ namespace transport_catalogue_input_json {
 			q.name_ = req.at("name").AsString();
 			q.coordinates_.lat = req.at("latitude").AsDouble();
 			q.coordinates_.lng = req.at("longitude").AsDouble();
-			json::Dict json_distances = req.at("road_distances").AsMap();
+			json::Dict json_distances = req.at("road_distances").AsDict();
 			for( auto distance : json_distances ){//цикл по списку дистанций до других остановок
 				q.distances[std::make_pair(q.name_, distance.first)] = distance.second.AsInt();
 				}
@@ -212,12 +217,12 @@ namespace transport_catalogue_input_json {
 
 
 			const json::Node global = doc.GetRoot();
-			const json::Dict requests = global.AsMap();
+			const json::Dict requests = global.AsDict();
 			// запросы на ввод информации
 			json::Node base_request = requests.at("base_requests");
 			for (auto json_req : base_request.AsArray()) {
 				RequestQueue::Query q;
-				json::Dict req = json_req.AsMap();
+				json::Dict req = json_req.AsDict();
 				std::string command = req.at("type").AsString();
 				if (command == "Stop") { //добавляем остановку
 					q = AddStop(req);
@@ -239,7 +244,7 @@ namespace transport_catalogue_input_json {
 			json::Node stat_request = requests.at("stat_requests");
 			for (auto json_req : stat_request.AsArray()) {
 				RequestQueue::Query q;
-				json::Dict req = json_req.AsMap();
+				json::Dict req = json_req.AsDict();
 				std::string command = req.at("type").AsString();
 
 				if (command == "Bus") { //делаем запрос на вывод информации по автобусу
@@ -261,7 +266,7 @@ namespace transport_catalogue_input_json {
 			// читаем настройки рендеринга
 			{
 				json::Node render_settings = requests.at("render_settings");
-				json::Dict json_req = render_settings.AsMap();
+				json::Dict json_req = render_settings.AsDict();
 				RequestQueue::Query q;
 
 				q.query_type_ = RequestQueue::MAP_SETTINGS;
