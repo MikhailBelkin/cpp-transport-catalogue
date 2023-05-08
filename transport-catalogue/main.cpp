@@ -10,6 +10,8 @@
 #include <chrono>
 #include <sstream>
 #include <string_view>
+#include "graph.h"
+#include "router.h"
 
 
 //#include "input_reader.h"
@@ -143,11 +145,83 @@ void TestJson() {
 	return;
 }
 
+/*void Test_Route_Building() {
+
+	struct Weight {
+		double weight = 0;
+		int transoprt_id;
+		bool operator==(Weight& other) {
+			if (weight == other.weight && transoprt_id == other.transoprt_id) {
+				return true;
+			}
+			return false;
+		}
+		bool operator>(const Weight& other) const {
+			if (weight > other.weight && transoprt_id == other.transoprt_id) {
+				return true;
+			}
+			return false;
+		}
+		bool operator<(const Weight& other) const {
+			if (weight < other.weight && transoprt_id == other.transoprt_id) {
+				return true;
+			}
+			return false;
+		}
+
+		Weight operator+(const Weight& other) const {
+			Weight result;
+			result.transoprt_id = transoprt_id;
+			if (transoprt_id == other.transoprt_id) {
+				result.weight += weight + other.weight;
+				
+			}
+			else {
+				//result.weight = 10000000000;
+				//result.transoprt_id = other.transoprt_id;
+			}
+			return result;
+
+		}
+
+	};
+	graph::DirectedWeightedGraph<Weight> all_graphs_(8);
+	vector <graph::Edge<Weight>> edges = {
+		{1, 2, {2.0, 1}, 1},
+		{2, 3, {2.0, 1}, 1},
+		{3, 4, {2.0,1}, 1},
+		{4, 5, {2.0,1}, 1},
+		{1, 2, {2.0, 2}, 2},
+		{2, 3, {2.0, 2}, 2},
+		{3, 6, {2.0,2}, 2},
+		{6, 7, {2.0, 2}, 2},
+		{2, 1, {2.0, 2}, 2},
+		{3, 2, {2.0,2}, 2},
+		{6, 3, {2.0,2} , 2},
+		{7, 6, {2.0,2} , 2},
+		
+	};
+	for (auto e : edges) {
+		all_graphs_.AddEdge(e);
+	}
+	graph::Router<Weight> route(all_graphs_);
+	auto build_result = route.BuildRoute(1, 7);
+	if (build_result.has_value()) {
+		graph::Router<Weight>::RouteInfo r = build_result.value();
+		return;
+
+	}
+}
+
+*/
+
 int main() {
 	//Test_Catalogue();
 	//TestQueue();
 	//TestStdInputOutput();
 	TestJson();
+	//Test_Route_Building();
+	
 
 	return 0;
 }

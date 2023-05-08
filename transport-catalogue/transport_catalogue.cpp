@@ -1,7 +1,3 @@
-// напишите решение с нуля
-// код сохраните в свой git-репозиторий
-// напишите решение с нуля
-// код сохраните в свой git-репозиторий
 #include "transport_catalogue.h"
 #include <vector>
 #include <stdexcept>
@@ -19,7 +15,7 @@ void TransportCatalogue::AddStop(const Stop& stop) {
 	stops_index_[stops_.back().GetName()] = &stops_.back();
 }
 
-Stop* TransportCatalogue::FindStop(const std::string& name) const {
+const Stop* TransportCatalogue::FindStop(const std::string& name) const {
 	if (stops_index_.count(name) != 0) {
 		return stops_index_.at(name);
 	}
@@ -28,18 +24,18 @@ Stop* TransportCatalogue::FindStop(const std::string& name) const {
 	}
 }
 
-void TransportCatalogue::SetDistances(Stop* stop1, Stop* stop2, int distance) {
+void TransportCatalogue::SetDistances(const Stop* stop1, const Stop* stop2, int distance) {
 	distances_[std::make_pair(stop1, stop2)] = distance;
 }
 
-int TransportCatalogue::GetDistance(Stop* stop1, Stop* stop2) {
+int TransportCatalogue::GetDistance(const Stop* stop1, const Stop* stop2) const{
 	if (distances_.count(std::make_pair(stop1, stop2)) != 0) {
-		return distances_[std::make_pair(stop1, stop2)];
+		return distances_.at(std::make_pair(stop1, stop2));
 	}
 	else
 		if (distances_.count(std::make_pair(stop2, stop1)) != 0) {
 
-			return distances_[std::make_pair(stop2, stop1)];
+			return distances_.at(std::make_pair(stop2, stop1));
 		}
 		else {
 			throw std::invalid_argument("Cannot find distanse" + stop1->GetName() + stop2->GetName());
@@ -57,7 +53,7 @@ void TransportCatalogue::AddBus(Bus& bus) {
 
 }
 
-Bus* TransportCatalogue::FindBus(const std::string& name) {
+const Bus* TransportCatalogue::FindBus(const std::string& name) const{
 	if (buses_index_.count(name) != 0) {
 		return buses_index_.at(name);
 	}

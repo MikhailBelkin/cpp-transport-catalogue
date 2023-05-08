@@ -52,23 +52,63 @@ namespace transport_catalogue_output_json {
 				//os << "buses";
 			}
 			for (auto bus : element.buses) {
-					 buses.push_back(bus);
+				buses.push_back(bus);
 			}
 			info["buses"s] = buses;
-			
-			
+
+
 		}
 		else {
 			info["error_message"s] = "not found"s;
 		}
 		return info;
 
+
 	}
+
+	json::Dict RouteInfo(request_queue::RequestQueue::QueryResult& element) {
+		json::Dict info;
+		json::Array routes;
+
+		info["request_id"s] = element.id;
+		if (element.route_info.empty()) {
+			info["error_message"s] = "not found"s;
+			return info;
+		}
+
+		info["total_time"s] = element.route_info.front().total_time;
+
+		if (element.route_info.front().total_time != 0) {
+			for (auto step : element.route_info) {
+				json::Dict step_info;
+				if (step.activity == RequestQueue::WAITING) {
+					step_info["type"s] = "Wait"s;
+					step_info["stop_name"s] = static_cast<string>(step.name);
+					step_info["time"s] = step.time;
+				}
+				if (step.activity == RequestQueue::BUS_MOVING) {
+					step_info["type"s] = "Bus"s;
+					step_info["bus"s] = static_cast<string>(step.name);
+					step_info["span_count"s] = step.span_count;
+					step_info["time"s] = step.time;
+				}
+
+				routes.push_back(step_info);
+			}
+		}
+
+
+		info["items"] = routes;
+
+		return info;
+
+	}
+
 
 
 	json::Dict StopOutputInfo(request_queue::RequestQueue::QueryResult& element, std::string map) {
 		json::Dict info;
-		json::Array buses;
+		
 
 		info["request_id"s] = element.id;
 		info["map"s] = map;
@@ -118,6 +158,15 @@ namespace transport_catalogue_output_json {
 
 				
 				break;
+
+
+				case RequestQueue::ROUTE_INFO:
+
+
+					root.emplace_back(RouteInfo(element));
+
+
+					break;
 
 				default:
 
@@ -200,6 +249,15 @@ namespace transport_catalogue_input_json {
 		}
 
 
+		RequestQueue::Query RouteInfo(json::Dict& req) {
+			RequestQueue::Query q;
+			q.query_type_ = RequestQueue::ROUTE_INFO;
+			q.id = req.at("id").AsInt();
+			q.stops.push_back(req.at("from").AsString());//имя начальной остановки
+			q.stops.push_back(req.at("to").AsString());//имя начальной остановки
+			return q;
+		}
+
 		RequestQueue::Query MapInfo(json::Dict& req) {
 			RequestQueue::Query q;
 			
@@ -238,6 +296,19 @@ namespace transport_catalogue_input_json {
 			}
 
 
+			// Читаем настройки роутинга.
+			json::Node route_request = requests.at("routing_settings");
+			{
+				RequestQueue::Query q;
+				json::Dict json_req = route_request.AsDict();
+				q.query_type_ = RequestQueue::ROUTING_SETTINGS;
+				
+				q.route_set.bus_wait_time = json_req.at("bus_wait_time").AsInt();
+				q.route_set.bus_velocity = json_req.at("bus_velocity").AsDouble();
+
+				query_array.push_back(q);
+			}
+
 
 			// запросы на вывод информации
 
@@ -256,8 +327,12 @@ namespace transport_catalogue_input_json {
 					q = StopInfo(req);
 				}
 
-				if (command == "Map") { //делаем запрос на вывод информации по оствановке
+				if (command == "Map") { //делаем запрос на вывод информации по рисованию карты маршрутов
 					q = MapInfo(req);
+				}
+
+				if (command == "Route") { //делаем запрос на вывод информации по составлению маршрута от одной остановки до другой
+					q = RouteInfo(req);
 				}
 
 				query_array.push_back(q);

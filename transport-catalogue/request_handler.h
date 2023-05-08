@@ -2,6 +2,7 @@
 #include "transport_catalogue.h"
 #include "map_renderer.h"
 #include "geo.h"
+#include "router.h"
 
 
 
@@ -16,10 +17,12 @@ namespace request_queue {
 			ADD_REGULAR_BUS,
 			ADD_RING_BUS,
 			MAP_SETTINGS,
+			ROUTING_SETTINGS,
 			GET_INFO,
 			BUS_INFO,
 			STOP_INFO,
-			MAP_INFO
+			MAP_INFO, 
+			ROUTE_INFO
 		};
 
 
@@ -42,8 +45,22 @@ namespace request_queue {
 
 		};
 
+		enum ActivityType {
+			WAITING,
+			LEAVING,
+			BUS_MOVING
+		};
 
 
+
+		struct RouteInfo {
+
+			ActivityType activity;
+			std::string_view name;
+			int span_count=0; // количество перегонов между остановками
+			double time=0;
+			double total_time = 0;
+		};
 
 		struct Query {
 			int id;
@@ -53,6 +70,8 @@ namespace request_queue {
 			std::vector<std::string> stops;
 			std::unordered_map<std::pair<std::string, std::string>, int, QDistHasher> distances;
 			map_render::MapRenderSettings map_set;
+			graph::route_settings route_set;
+			
 		};
 
 		
@@ -66,9 +85,12 @@ namespace request_queue {
 			std::vector<std::string> buses;
 			double track_lenght = 0;
 			double track_distance = 0;
+			
 			bool found;
 			
 			map_render::MapRender map_data;
+			std::vector<RouteInfo> route_info;
+
 
 		};
 
@@ -91,7 +113,13 @@ namespace request_queue {
 		map_render::MapRender::AllRoutes GetAllRoutes();
 
 	private:
+
+		std::vector<RequestQueue::RouteInfo>  BuildRoute(const RequestQueue::Query& q);
+		void Fill_Graphs();
 		map_render::MapRender map_data_;
+		std::shared_ptr<graph::DirectedWeightedGraph<double>> all_graphs_=nullptr;
+		std::shared_ptr<graph::Router<double>> route;
+		graph::route_settings route_set_;
 		std::unordered_map<QueryType, std::deque<Query>> requests_;
 		transport_catalogue::TransportCatalogue* tc_;
 	};
