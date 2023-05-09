@@ -12,6 +12,7 @@ using namespace transport;
 
 void TransportCatalogue::AddStop(const Stop& stop) {
 	stops_.push_back(std::move(stop));
+	stops_.back().SetId(stops_.size()-1);
 	stops_index_[stops_.back().GetName()] = &stops_.back();
 }
 
@@ -49,6 +50,7 @@ int TransportCatalogue::GetDistance(const Stop* stop1, const Stop* stop2) const{
 //Bus Methods
 void TransportCatalogue::AddBus(Bus& bus) {
 	buses_.push_back(std::move(bus));
+	buses_.back().SetId(buses_.size() - 1);
 	buses_index_[buses_.back().GetName()] = &buses_.back();
 
 }

@@ -9,52 +9,18 @@ using namespace transport;
 
 
 
-void RequestQueue::Fill_Graphs() {
-	all_graphs_ = std::make_shared<graph::DirectedWeightedGraph<double>>
-		(graph::DirectedWeightedGraph<double>( tc_->GetStopsCount()));
-
-	
-	for (auto bus : tc_->GetAllRoutes()) {
-		//std::vector<Stop*> stops;
-		auto bus_stops = bus.GetBusInfo();
-		for (int stops_from_count = 0; stops_from_count < bus_stops.size(); stops_from_count++ ) {
-			const Stop * stop_start = bus_stops[stops_from_count];
-
-			graph::Edge<double> bus_start_edge;
-			bus_start_edge.from = stop_start->GetId();
-			bus_start_edge.to = stop_start->GetId();
-			bus_start_edge.weight = 0;
-			bus_start_edge.transport_id = bus.GetId();
-			bus_start_edge.span_count = 0;
-				
-			all_graphs_.get()->AddEdge(bus_start_edge);
-			int distance = 0;
-			for (int stops_to_count = stops_from_count + 1; stops_to_count < bus_stops.size(); stops_to_count++) {
-				const Stop* stop_finish = bus_stops[stops_to_count];
-				distance+= tc_->GetDistance(bus_stops[stops_to_count - 1], stop_finish);
-				graph::Edge<double> bus_finish_edge;
-				bus_finish_edge.from = stop_start->GetId();
-				bus_finish_edge.to = stop_finish->GetId();
-				bus_finish_edge.weight = route_set_.bus_wait_time+  distance/ 1000.0 / (route_set_.bus_velocity / 60.0);
-				bus_finish_edge.transport_id = bus.GetId();
-				bus_finish_edge.span_count = stops_to_count - stops_from_count;
-				all_graphs_.get()->AddEdge(bus_finish_edge);
-			}
-			
-		}
-	}
-}
 
 std::vector<RequestQueue::RouteInfo> RequestQueue::BuildRoute(const RequestQueue::Query& q) {
 	std::vector<RequestQueue::RouteInfo>  result;
 	
-	if (!all_graphs_) {
-		Fill_Graphs();
-		route = std::make_shared<graph::Router<double>>(*all_graphs_.get());
+	if (!tr_) {
+		tr_ = std::make_unique<transport_router::TransportRouter>(route_set_.bus_wait_time,
+			route_set_.bus_velocity,
+			*tc_);
 		
 	}
 	
-	auto build_result = route->BuildRoute(tc_->FindStop(q.stops[0])->GetId(), tc_->FindStop(q.stops[1])->GetId());
+	auto build_result = tr_->BuildRoute(tc_->FindStop(q.stops[0])->GetId(), tc_->FindStop(q.stops[1])->GetId());
 	if (build_result.has_value()) {
 		graph::Router<double>::RouteInfo r = build_result.value();
 		bool is_first = true;
@@ -72,7 +38,7 @@ std::vector<RequestQueue::RouteInfo> RequestQueue::BuildRoute(const RequestQueue
 				element.total_time = r.weight; // Total_time пишем просто в первый элемент	
 				is_first = false;
 			}
-			graph::Edge e = all_graphs_.get()->GetEdge(edge);
+			graph::Edge e = tr_->GetEdge(edge);
 			//выделяем назад остановку с временем ожидания
 			element.name = tc_->GetStop(e.from)->GetName();
 			element.time = route_set_.bus_wait_time;

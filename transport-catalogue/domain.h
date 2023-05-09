@@ -23,7 +23,7 @@ namespace transport {
 
 
 		explicit Stop(const std::string& name, const Coordinates& place) :name_(move(name)), place_(place) {
-			id_ = stops_count_++;
+			
 		}
 
 		const std::string& GetName() const {
@@ -33,6 +33,11 @@ namespace transport {
 		int GetId() const {
 			return id_;
 		}
+
+		void SetId(int id) {
+			id_ = id;
+		}
+
 
 		void SetName(const std::string& name) {
 			name_ = std::move(name);
@@ -46,7 +51,7 @@ namespace transport {
 		}
 
 	private:
-		static int stops_count_;
+		
 		std::string name_;
 		Coordinates place_;
 		int id_;
@@ -97,11 +102,11 @@ namespace transport {
 
 	class Bus {
 	public:
-		explicit Bus(const std::string& name, const std::vector<const Stop*>& stops) :name_(std::move(name)) {
+		explicit Bus( const std::string& name, const std::vector<const Stop*>& stops) :name_(std::move(name)) {
 			for (auto s : stops) {
 				track_.push_back(s);
 			}
-			id_ = bus_count_++;
+			
 
 		};
 
@@ -111,6 +116,10 @@ namespace transport {
 
 		int GetId() const{
 			return id_;
+		}
+
+		void SetId(int id){
+			id_ = id;
 		}
 
 		const std::vector<const Stop*>& GetBusInfo() const {
@@ -123,7 +132,7 @@ namespace transport {
 		}
 
 	private:
-		static int bus_count_;
+		
 		std::string name_;
 		std::vector<const Stop*> track_;
 		bool is_round_ = false;

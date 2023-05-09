@@ -1,5 +1,6 @@
 #pragma once
 #include "transport_catalogue.h"
+#include "transport_router.h"
 #include "map_renderer.h"
 #include "geo.h"
 #include "router.h"
@@ -115,10 +116,11 @@ namespace request_queue {
 	private:
 
 		std::vector<RequestQueue::RouteInfo>  BuildRoute(const RequestQueue::Query& q);
-		void Fill_Graphs();
+//		void Fill_Graphs();
+//		std::shared_ptr<graph::DirectedWeightedGraph<double>> all_graphs_ = nullptr;
+//		std::shared_ptr<graph::Router<double>> route;
+		std::unique_ptr<transport_router::TransportRouter> tr_=nullptr;
 		map_render::MapRender map_data_;
-		std::shared_ptr<graph::DirectedWeightedGraph<double>> all_graphs_=nullptr;
-		std::shared_ptr<graph::Router<double>> route;
 		graph::route_settings route_set_;
 		std::unordered_map<QueryType, std::deque<Query>> requests_;
 		transport_catalogue::TransportCatalogue* tc_;
