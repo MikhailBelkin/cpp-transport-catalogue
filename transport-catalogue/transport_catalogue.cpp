@@ -64,7 +64,7 @@ const Bus* TransportCatalogue::FindBus(const std::string& name) const{
 	}
 }
 
-std::vector<Bus> TransportCatalogue::GetBusesForStop(const std::string stop_name) {
+std::vector<Bus> TransportCatalogue::GetBusesForStop(const std::string stop_name) const {
 	std::vector<Bus> result;
 	for (auto bus : buses_) {
 		bool yes = false;
@@ -81,7 +81,7 @@ std::vector<Bus> TransportCatalogue::GetBusesForStop(const std::string stop_name
 	return result;
 }
 
-std::vector<Bus> TransportCatalogue::GetAllRoutes() {
+std::vector<Bus> TransportCatalogue::GetAllRoutes() const {
 	std::vector<Bus> result;
 
 	for (auto bus : buses_) {
@@ -96,3 +96,26 @@ std::vector<Bus> TransportCatalogue::GetAllRoutes() {
 
 }
 
+
+std::vector<Stop> TransportCatalogue::GetAllStops() const {
+	std::vector<Stop> result;
+
+	for (auto stop : stops_) {
+
+		result.push_back(stop);
+
+	}
+
+	return result;
+
+}
+
+std::map < std::pair<std::string, std::string>, int> TransportCatalogue::GetAllDistances() const {
+
+	std::map < std::pair<std::string, std::string>, int> result;
+	for (auto item : this->distances_) {
+		result[make_pair(item.first.first->GetName(), item.first.second->GetName())] = item.second;
+	}
+	return result;
+
+}

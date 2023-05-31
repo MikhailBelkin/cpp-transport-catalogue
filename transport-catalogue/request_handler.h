@@ -4,6 +4,7 @@
 #include "map_renderer.h"
 #include "geo.h"
 #include "router.h"
+#include "transport_catalogue.pb.h"
 
 
 
@@ -19,6 +20,8 @@ namespace request_queue {
 			ADD_RING_BUS,
 			MAP_SETTINGS,
 			ROUTING_SETTINGS,
+			SERIALIZATION_SETTINGS_OUTPUT,
+			SERIALIZATION_SETTINGS_INPUT,
 			GET_INFO,
 			BUS_INFO,
 			STOP_INFO,
@@ -116,6 +119,12 @@ namespace request_queue {
 	private:
 
 		std::vector<RequestQueue::RouteInfo>  BuildRoute(const RequestQueue::Query& q);
+		void Deserialize_TC(tc_serialization::TransportCatalogue& tcs);
+		void Deserialize_Map(tc_serialization::TransportCatalogue& tcs);
+		void Deserialize_Router(tc_serialization::TransportCatalogue& tcs);
+		void Serialize_Router(std::string db_file_name, Query q);
+		void Serialize_Map(std::string db_file_name, Query q);
+		void Serialize_TC(std::string db_file_name);
 //		void Fill_Graphs();
 //		std::shared_ptr<graph::DirectedWeightedGraph<double>> all_graphs_ = nullptr;
 //		std::shared_ptr<graph::Router<double>> route;

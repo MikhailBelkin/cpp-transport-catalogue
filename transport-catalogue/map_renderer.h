@@ -15,7 +15,21 @@
 
 namespace map_render {
 
-    
+    enum TypeColor {
+        STRING,
+        RGB,
+        RGBA
+    };
+
+    struct Diff_color{
+        TypeColor color_type;
+        std::string color_string;
+        uint8_t color_r;
+        uint8_t color_g;
+        uint8_t color_b;
+        double color_a;
+
+    };
     
 
     struct MapRenderSettings {
@@ -32,9 +46,11 @@ namespace map_render {
         std::pair<double, double> stop_label_offset;
 
         svg::Color underlayer_color;
+        Diff_color underlayer_color_diff;
 
         double underlayer_width;
         std::vector <svg::Color> color_palette;
+        std::vector<Diff_color> color_palette_diff;
 
     };
 

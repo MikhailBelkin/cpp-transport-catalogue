@@ -1,4 +1,9 @@
 
+#include <fstream>
+#include <iostream>
+#include <string_view>
+
+
 
 #include "transport_catalogue.h"
 #include "request_handler.h"
@@ -215,13 +220,67 @@ void TestJson() {
 
 */
 
-int main() {
+int main1() {
 	//Test_Catalogue();
 	//TestQueue();
 	//TestStdInputOutput();
-	TestJson();
+	//TestJson();
 	//Test_Route_Building();
 	
+
+	return 0;
+}
+
+using namespace std::literals;
+
+void PrintUsage(std::ostream& stream = std::cerr) {
+    stream << "Usage: transport_catalogue [make_base|process_requests]\n"sv;
+}
+
+int main(int argc, char* argv[]) {
+	setlocale(LC_ALL, "Russian");
+    if (argc != 2) {
+        PrintUsage();
+        return 1;
+    }
+
+    const std::string_view mode(argv[1]);
+
+    if (mode == "make_base"sv) {
+		TransportCatalogue t;
+		RequestQueue rq(t);
+		std::vector<RequestQueue::Query> queries;
+		//Load_query(doc, queries);
+		transport_catalogue_input_json::LoadQuery(json::Load(cin), queries, true);
+		
+		//cin >> queries;
+
+
+		for (auto q : queries) {
+			rq.AddRequest(q);
+		}
+		vector<RequestQueue::QueryResult> res = rq.ProcessQueue();
+
+    } else if (mode == "process_requests"sv) {
+		TransportCatalogue t;
+		RequestQueue rq(t);
+		std::vector<RequestQueue::Query> queries;
+		transport_catalogue_input_json::LoadQuery(json::Load(cin), queries, false);
+		//cin >> queries;
+
+
+		for (auto q : queries) {
+			rq.AddRequest(q);
+		}
+		vector<RequestQueue::QueryResult> res = rq.ProcessQueue();
+
+
+		cout << res;
+
+    } else {
+        PrintUsage();
+        return 1;
+    }
 
 	return 0;
 }

@@ -270,145 +270,198 @@ namespace transport_catalogue_input_json {
 
 
 		void LoadQuery(const json::Document &doc, 
-			std::vector<request_queue::RequestQueue::Query>& query_array) {
+			std::vector<request_queue::RequestQueue::Query>& query_array, bool make_base_mode) {
 			
 
 
 			const json::Node global = doc.GetRoot();
 			const json::Dict requests = global.AsDict();
 			// запросы на ввод информации
-			json::Node base_request = requests.at("base_requests");
-			for (auto json_req : base_request.AsArray()) {
-				RequestQueue::Query q;
-				json::Dict req = json_req.AsDict();
-				std::string command = req.at("type").AsString();
-				if (command == "Stop") { //добавляем остановку
-					q = AddStop(req);
 
-				};
+			if (make_base_mode) {
+				json::Node base_request = requests.at("base_requests");
+				for (auto json_req : base_request.AsArray()) {
+					RequestQueue::Query q;
+					json::Dict req = json_req.AsDict();
+					std::string command = req.at("type").AsString();
+					if (command == "Stop") { //добавляем остановку
+						q = AddStop(req);
 
-				if (command == "Bus") { // добавляем австобус
+					};
 
-					q = AddBus(req);
+					if (command == "Bus") { // добавляем австобус
 
+						q = AddBus(req);
+
+					}
+					query_array.push_back(q);
 				}
-				query_array.push_back(q);
+
+
+				// Читаем настройки роутинга.
+				json::Node route_request = requests.at("routing_settings");
+				{
+					RequestQueue::Query q;
+					json::Dict json_req = route_request.AsDict();
+					q.query_type_ = RequestQueue::ROUTING_SETTINGS;
+
+					q.route_set.bus_wait_time = json_req.at("bus_wait_time").AsInt();
+					q.route_set.bus_velocity = json_req.at("bus_velocity").AsDouble();
+
+					query_array.push_back(q);
+				}
+				
 			}
+			
 
-
-			// Читаем настройки роутинга.
-			json::Node route_request = requests.at("routing_settings");
+			json::Node serialization_request = requests.at("serialization_settings");
 			{
 				RequestQueue::Query q;
-				json::Dict json_req = route_request.AsDict();
-				q.query_type_ = RequestQueue::ROUTING_SETTINGS;
+				json::Dict json_req = serialization_request.AsDict();
+				if (make_base_mode) {
+					q.query_type_ = RequestQueue::SERIALIZATION_SETTINGS_OUTPUT;
+				}
+				else {
+					q.query_type_ = RequestQueue::SERIALIZATION_SETTINGS_INPUT;
+				}
+				q.name_ = json_req.at("file").AsString();
 				
-				q.route_set.bus_wait_time = json_req.at("bus_wait_time").AsInt();
-				q.route_set.bus_velocity = json_req.at("bus_velocity").AsDouble();
 
 				query_array.push_back(q);
 			}
 
 
 			// запросы на вывод информации
+			if (!make_base_mode) {
+				json::Node stat_request = requests.at("stat_requests");
+				for (auto json_req : stat_request.AsArray()) {
+					RequestQueue::Query q;
+					json::Dict req = json_req.AsDict();
+					std::string command = req.at("type").AsString();
 
-			json::Node stat_request = requests.at("stat_requests");
-			for (auto json_req : stat_request.AsArray()) {
-				RequestQueue::Query q;
-				json::Dict req = json_req.AsDict();
-				std::string command = req.at("type").AsString();
+					if (command == "Bus") { //делаем запрос на вывод информации по автобусу
 
-				if (command == "Bus") { //делаем запрос на вывод информации по автобусу
+						q = BusInfo(req);
 
-					q = BusInfo(req);
+					}
+					if (command == "Stop") { //делаем запрос на вывод информации по оствановке
+						q = StopInfo(req);
+					}
 
+					if (command == "Map") { //делаем запрос на вывод информации по рисованию карты маршрутов
+						q = MapInfo(req);
+					}
+
+					if (command == "Route") { //делаем запрос на вывод информации по составлению маршрута от одной остановки до другой
+						q = RouteInfo(req);
+					}
+
+					query_array.push_back(q);
 				}
-				if (command == "Stop") { //делаем запрос на вывод информации по оствановке
-					q = StopInfo(req);
-				}
-
-				if (command == "Map") { //делаем запрос на вывод информации по рисованию карты маршрутов
-					q = MapInfo(req);
-				}
-
-				if (command == "Route") { //делаем запрос на вывод информации по составлению маршрута от одной остановки до другой
-					q = RouteInfo(req);
-				}
-
-				query_array.push_back(q);
 			}
 
+			if (make_base_mode) {
 			// читаем настройки рендеринга
-			{
-				json::Node render_settings = requests.at("render_settings");
-				json::Dict json_req = render_settings.AsDict();
-				RequestQueue::Query q;
+				{
+					json::Node render_settings = requests.at("render_settings");
+					json::Dict json_req = render_settings.AsDict();
+					RequestQueue::Query q;
 
-				q.query_type_ = RequestQueue::MAP_SETTINGS;
-				q.map_set.width = json_req.at("width").AsDouble();
-				q.map_set.height = json_req.at("height").AsDouble();
-				q.map_set.padding = json_req.at("padding").AsDouble();
-				q.map_set.line_with = json_req.at("line_width").AsDouble();
-				q.map_set.stop_radius = json_req.at("stop_radius").AsDouble();
-				q.map_set.bus_label_font_size = json_req.at("bus_label_font_size").AsInt();
-				q.map_set.bus_label_offset.first = json_req.at("bus_label_offset").AsArray()[0].AsDouble();
-				q.map_set.bus_label_offset.second = json_req.at("bus_label_offset").AsArray()[1].AsDouble();
-				q.map_set.stop_label_font_size = json_req.at("stop_label_font_size").AsInt();
-				q.map_set.stop_label_offset.first = json_req.at("stop_label_offset").AsArray()[0].AsDouble();
-				q.map_set.stop_label_offset.second = json_req.at("stop_label_offset").AsArray()[1].AsDouble();
-				q.map_set.underlayer_width = json_req.at("underlayer_width").AsDouble();
-				if (json_req.at("underlayer_color").IsString()) {
-					q.map_set.underlayer_color = json_req.at("underlayer_color").AsString();
-				}
-				if (json_req.at("underlayer_color").IsArray()) {
-					if (json_req.at("underlayer_color").AsArray().size() == 3) { //формат RGB
-						q.map_set.underlayer_color = svg::Rgb{
-								static_cast<uint8_t>(json_req.at("underlayer_color").AsArray()[0].AsInt()),
-								static_cast<uint8_t>(json_req.at("underlayer_color").AsArray()[1].AsInt()),
-								static_cast<uint8_t>(json_req.at("underlayer_color").AsArray()[2].AsInt())
-						};
+					q.query_type_ = RequestQueue::MAP_SETTINGS;
+					q.map_set.width = json_req.at("width").AsDouble();
+					q.map_set.height = json_req.at("height").AsDouble();
+					q.map_set.padding = json_req.at("padding").AsDouble();
+					q.map_set.line_with = json_req.at("line_width").AsDouble();
+					q.map_set.stop_radius = json_req.at("stop_radius").AsDouble();
+					q.map_set.bus_label_font_size = json_req.at("bus_label_font_size").AsInt();
+					q.map_set.bus_label_offset.first = json_req.at("bus_label_offset").AsArray()[0].AsDouble();
+					q.map_set.bus_label_offset.second = json_req.at("bus_label_offset").AsArray()[1].AsDouble();
+					q.map_set.stop_label_font_size = json_req.at("stop_label_font_size").AsInt();
+					q.map_set.stop_label_offset.first = json_req.at("stop_label_offset").AsArray()[0].AsDouble();
+					q.map_set.stop_label_offset.second = json_req.at("stop_label_offset").AsArray()[1].AsDouble();
+					q.map_set.underlayer_width = json_req.at("underlayer_width").AsDouble();
+					if (json_req.at("underlayer_color").IsString()) {
+						q.map_set.underlayer_color = json_req.at("underlayer_color").AsString();
+						q.map_set.underlayer_color_diff.color_type = map_render::TypeColor::STRING;
+						q.map_set.underlayer_color_diff.color_string = json_req.at("underlayer_color").AsString();;
 					}
-					else // формат RGBa
-					{
-						q.map_set.underlayer_color = svg::Rgba{
-								static_cast<uint8_t>(json_req.at("underlayer_color").AsArray()[0].AsInt()),
-								static_cast<uint8_t>(json_req.at("underlayer_color").AsArray()[1].AsInt()),
-								static_cast<uint8_t>(json_req.at("underlayer_color").AsArray()[2].AsInt()),
-								json_req.at("underlayer_color").AsArray()[3].AsDouble()
-						};
-					}
-				}
-
-
-
-				json::Array colors = json_req.at("color_palette").AsArray();
-				for (auto color : colors) {
-
-					if (color.IsString()) {
-						q.map_set.color_palette.push_back(color.AsString());
-					}
-					if (color.IsArray()) {
-						if (color.AsArray().size() == 3) { //формат RGB
-							q.map_set.color_palette.push_back(svg::Rgb{
-								static_cast<uint8_t>(color.AsArray()[0].AsInt()),
-								static_cast<uint8_t>(color.AsArray()[1].AsInt()),
-								static_cast<uint8_t>(color.AsArray()[2].AsInt()),
-								});
+					if (json_req.at("underlayer_color").IsArray()) {
+						if (json_req.at("underlayer_color").AsArray().size() == 3) { //формат RGB
+							q.map_set.underlayer_color = svg::Rgb{
+									static_cast<uint8_t>(json_req.at("underlayer_color").AsArray()[0].AsInt()),
+									static_cast<uint8_t>(json_req.at("underlayer_color").AsArray()[1].AsInt()),
+									static_cast<uint8_t>(json_req.at("underlayer_color").AsArray()[2].AsInt())
+							};
+							q.map_set.underlayer_color_diff.color_type = map_render::TypeColor::RGB;
+							q.map_set.underlayer_color_diff.color_r = static_cast<uint8_t>(json_req.at("underlayer_color").AsArray()[0].AsInt());
+							q.map_set.underlayer_color_diff.color_g = static_cast<uint8_t>(json_req.at("underlayer_color").AsArray()[1].AsInt());
+							q.map_set.underlayer_color_diff.color_b = static_cast<uint8_t>(json_req.at("underlayer_color").AsArray()[2].AsInt());
 						}
 						else // формат RGBa
 						{
-							q.map_set.color_palette.push_back(svg::Rgba{
-								static_cast<uint8_t>(color.AsArray()[0].AsInt()),
-								static_cast<uint8_t>(color.AsArray()[1].AsInt()),
-								static_cast<uint8_t>(color.AsArray()[2].AsInt()),
-								color.AsArray()[3].AsDouble()
-								});
+							q.map_set.underlayer_color = svg::Rgba{
+									static_cast<uint8_t>(json_req.at("underlayer_color").AsArray()[0].AsInt()),
+									static_cast<uint8_t>(json_req.at("underlayer_color").AsArray()[1].AsInt()),
+									static_cast<uint8_t>(json_req.at("underlayer_color").AsArray()[2].AsInt()),
+									json_req.at("underlayer_color").AsArray()[3].AsDouble()
+							};
+							q.map_set.underlayer_color_diff.color_type = map_render::TypeColor::RGBA;
+							q.map_set.underlayer_color_diff.color_r = static_cast<uint8_t>(json_req.at("underlayer_color").AsArray()[0].AsInt());
+							q.map_set.underlayer_color_diff.color_g = static_cast<uint8_t>(json_req.at("underlayer_color").AsArray()[1].AsInt());
+							q.map_set.underlayer_color_diff.color_b = static_cast<uint8_t>(json_req.at("underlayer_color").AsArray()[2].AsInt());
+							q.map_set.underlayer_color_diff.color_a = json_req.at("underlayer_color").AsArray()[3].AsDouble();
 						}
 					}
+
+
+
+					json::Array colors = json_req.at("color_palette").AsArray();
+					for (auto color : colors) {
+
+						if (color.IsString()) {
+							q.map_set.color_palette.push_back(color.AsString());
+							map_render::Diff_color cd;
+							cd.color_type = map_render::TypeColor::STRING;
+							cd.color_string = color.AsString();
+							q.map_set.color_palette_diff.push_back(cd);
+						}
+						if (color.IsArray()) {
+							if (color.AsArray().size() == 3) { //формат RGB
+								q.map_set.color_palette.push_back(svg::Rgb{
+									static_cast<uint8_t>(color.AsArray()[0].AsInt()),
+									static_cast<uint8_t>(color.AsArray()[1].AsInt()),
+									static_cast<uint8_t>(color.AsArray()[2].AsInt()),
+									});
+								map_render::Diff_color cd;
+								cd.color_type = map_render::TypeColor::RGB;
+								cd.color_r = color.AsArray()[0].AsInt();
+								cd.color_g = color.AsArray()[1].AsInt();
+								cd.color_b = color.AsArray()[2].AsInt();
+								q.map_set.color_palette_diff.push_back(cd);
+
+							}
+							else // формат RGBa
+							{
+								q.map_set.color_palette.push_back(svg::Rgba{
+									static_cast<uint8_t>(color.AsArray()[0].AsInt()),
+									static_cast<uint8_t>(color.AsArray()[1].AsInt()),
+									static_cast<uint8_t>(color.AsArray()[2].AsInt()),
+									color.AsArray()[3].AsDouble()
+									});
+								map_render::Diff_color cd;
+								cd.color_type = map_render::TypeColor::RGBA;
+								cd.color_r = color.AsArray()[0].AsInt();
+								cd.color_g = color.AsArray()[1].AsInt();
+								cd.color_b = color.AsArray()[2].AsInt();
+								cd.color_a = color.AsArray()[3].AsDouble();
+								q.map_set.color_palette_diff.push_back(cd);
+
+							}
+						}
+					}
+
+					query_array.push_back(q);
 				}
-
-				query_array.push_back(q);
-
 			}
 		
 			

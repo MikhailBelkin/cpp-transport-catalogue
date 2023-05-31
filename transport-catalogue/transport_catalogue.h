@@ -64,15 +64,17 @@ namespace transport_catalogue {
 
 			const Bus* FindBus(const std::string& name) const;
 
-			std::vector<Bus> GetBusesForStop(const std::string stop_name);
-			std::vector<Bus> GetAllRoutes();
-
+			std::vector<Bus> GetBusesForStop(const std::string stop_name) const;
+			std::vector<Bus> GetAllRoutes() const;
+			std::vector<Stop> GetAllStops() const;
+			std::map < std::pair<std::string, std::string>, int> GetAllDistances() const;
 
 		private:
 			//stops filds
 			std::deque<Stop> stops_;
 			std::unordered_map<std::string_view, const Stop*, StopHasher>  stops_index_;
 			std::unordered_map<std::pair<const Stop*, const Stop*>, int, DistHasher> distances_;
+
 
 			//bus fields
 

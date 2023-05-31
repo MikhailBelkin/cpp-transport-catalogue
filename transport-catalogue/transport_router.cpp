@@ -27,6 +27,8 @@ namespace transport_router {
 				bus_start_edge.span_count = 0;
 
 				all_graphs_.get()->AddEdge(bus_start_edge);
+				all_edges_.push_back(bus_start_edge);
+
 				int distance = 0;
 				for (int stops_to_count = stops_from_count + 1; stops_to_count < bus_stops.size(); stops_to_count++) {
 					const Stop* stop_finish = bus_stops[stops_to_count];
@@ -38,6 +40,7 @@ namespace transport_router {
 					bus_finish_edge.transport_id = bus.GetId();
 					bus_finish_edge.span_count = stops_to_count - stops_from_count;
 					all_graphs_.get()->AddEdge(bus_finish_edge);
+					all_edges_.push_back(bus_finish_edge);
 				}
 
 			}

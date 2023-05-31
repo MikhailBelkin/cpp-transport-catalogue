@@ -28,6 +28,8 @@ namespace transport_catalogue_input_json {
 
 
 	std::istream& operator>>(std::istream& is, std::vector<request_queue::RequestQueue::Query>& query_array);
+	void LoadQuery(const json::Document& doc,
+		std::vector<request_queue::RequestQueue::Query>& query_array, bool make_base_mode = false);
 
 }
 
