@@ -2,6 +2,7 @@
 #include "router.h"
 #include "graph.h"
 #include "transport_catalogue.pb.h"
+#include "serialization.h"
 #include <string>
 
 #include <fstream>
@@ -59,295 +60,6 @@ std::vector<RequestQueue::RouteInfo> RequestQueue::BuildRoute(const RequestQueue
 		}
 	}
 	return result;
-}
-
-void RequestQueue::Deserialize_TC(tc_serialization::TransportCatalogue& tcs) {
-	for (auto stop : tcs.stops()) {
-		Coordinates coord;
-		coord.lat = stop.mutable_place()->lat();
-		coord.lng = stop.mutable_place()->lng();
-		Stop new_stop(stop.name(), coord);
-		new_stop.SetId(stop.id());
-		tc_->AddStop(new_stop);
-	}
-	for (auto bus : tcs.buses()) {
-		std::vector<const Stop*> new_bus_stops(bus.mutable_track()->size());
-		for (int i = 0; i < bus.mutable_track()->size(); i++) {
-			new_bus_stops[i] = tc_->FindStop(bus.mutable_track(i)->name());
-		}
-		Bus new_bus(bus.name(), new_bus_stops);
-		new_bus.SetId(bus.id());
-
-		if (bus.is_round()) {
-			new_bus.SetRound();
-		}
-
-		tc_->AddBus(new_bus);
-
-	}
-	for (auto item : tcs.dist_list()) {
-		auto stop1 = item.stop1();
-		auto stop2 = item.stop2();
-		tc_->SetDistances(tc_->FindStop(stop1), tc_->FindStop(stop2), item.dist());
-	}
-
-
-
-}
-
-
-
-void RequestQueue::Deserialize_Map(tc_serialization::TransportCatalogue& tcs) {
-
-	map_render::MapRenderSettings map_set;
-	/// десериализация настроек рендеринга
-	map_set.width = tcs.mutable_map_settings()->width();
-	map_set.height = tcs.mutable_map_settings()->height();
-	map_set.padding = tcs.mutable_map_settings()->padding();
-	map_set.line_with = tcs.mutable_map_settings()->line_with();
-	map_set.stop_radius = tcs.mutable_map_settings()->stop_radius();
-	map_set.bus_label_font_size = tcs.mutable_map_settings()->bus_label_font_size();
-	map_set.bus_label_offset.first = tcs.mutable_map_settings()->bus_label_offset_first();
-	map_set.bus_label_offset.second = tcs.mutable_map_settings()->bus_label_offset_second();
-	map_set.stop_label_font_size = tcs.mutable_map_settings()->stop_label_font_size();
-	map_set.stop_label_offset.first = tcs.mutable_map_settings()->stop_label_offset_first();
-	map_set.stop_label_offset.second = tcs.mutable_map_settings()->stop_label_offset_second();
-
-	tc_serialization::ColorVariant c;
-
-	map_set.underlayer_color_diff.color_type = static_cast<map_render::TypeColor>(tcs.mutable_map_settings()->mutable_underlayer_color()->type());
-
-
-	if (map_set.underlayer_color_diff.color_type == map_render::TypeColor::STRING) {
-		map_set.underlayer_color = tcs.mutable_map_settings()->mutable_underlayer_color()->color();
-
-	}
-	if (map_set.underlayer_color_diff.color_type == map_render::TypeColor::RGB) {
-		map_set.underlayer_color = svg::Rgb{
-			tcs.mutable_map_settings()->mutable_underlayer_color()->red(),
-			tcs.mutable_map_settings()->mutable_underlayer_color()->green(),
-			tcs.mutable_map_settings()->mutable_underlayer_color()->blue()
-		};
-	}
-	if (map_set.underlayer_color_diff.color_type == map_render::TypeColor::RGBA) {
-
-		map_set.underlayer_color = svg::Rgba{
-			tcs.mutable_map_settings()->mutable_underlayer_color()->red(),
-			tcs.mutable_map_settings()->mutable_underlayer_color()->green(),
-			tcs.mutable_map_settings()->mutable_underlayer_color()->blue(),
-			tcs.mutable_map_settings()->mutable_underlayer_color()->opacity()
-		};
-
-	}
-
-	map_set.underlayer_width = tcs.mutable_map_settings()->underlayer_width();
-
-	map_set.color_palette.resize(tcs.mutable_map_settings()->color_palette_size());
-	for (int i = 0; i < map_set.color_palette.size(); i++) {
-
-		auto color_type = static_cast<map_render::TypeColor>(tcs.mutable_map_settings()->color_palette(i).type());
-
-		if (color_type == map_render::TypeColor::STRING) {
-			map_set.color_palette[i] = tcs.mutable_map_settings()->color_palette(i).color();
-
-		}
-		if (color_type == map_render::TypeColor::RGB) {
-			map_set.color_palette[i] = svg::Rgb{
-				tcs.mutable_map_settings()->color_palette(i).red(),
-				tcs.mutable_map_settings()->color_palette(i).green(),
-				tcs.mutable_map_settings()->color_palette(i).blue()
-			};
-		}
-		if (color_type == map_render::TypeColor::RGBA) {
-			map_set.color_palette[i] = svg::Rgba{
-				tcs.mutable_map_settings()->color_palette(i).red(),
-				tcs.mutable_map_settings()->color_palette(i).green(),
-				tcs.mutable_map_settings()->color_palette(i).blue(),
-				tcs.mutable_map_settings()->color_palette(i).opacity()
-			};
-
-		}
-
-	}
-	// render_map
-	map_data_.SetMapSettings(map_set);
-	map_data_.SetAllroutes(GetAllRoutes());
-
-}
-
-
-void RequestQueue::Deserialize_Router(tc_serialization::TransportCatalogue& tcs) {
-	route_set_.bus_velocity = tcs.mutable_route_info()->bus_velocity();
-	route_set_.bus_wait_time = tcs.mutable_route_info()->bus_wait_time();
-	route_set_.bus_leaving_time = tcs.mutable_route_info()->bus_leaving_time();
-
-
-	std::vector<graph::Edge<double>>  edges;
-	for (int i = 0; i < tcs.mutable_all_graphs()->size(); i++) {
-		graph::Edge<double> item;
-		item.from = tcs.mutable_all_graphs(i)->from();
-		item.to = tcs.mutable_all_graphs(i)->to();
-		item.weight = tcs.mutable_all_graphs(i)->weight();
-		item.transport_id = tcs.mutable_all_graphs(i)->transport_id();
-		item.span_count = tcs.mutable_all_graphs(i)->span_count();
-
-		edges.push_back(item);
-	}
-
-	tr_ = std::make_unique<transport_router::TransportRouter>(route_set_.bus_wait_time,
-		route_set_.bus_velocity, edges,
-		*tc_);
-
-}
-
-
-
-void RequestQueue::Serialize_Router(std::string db_file_name, Query q) {
-	tc_serialization::TransportCatalogue tcs;
-	tc_serialization::RouteInfo ri;
-	ri.set_bus_leaving_time(q.route_set.bus_leaving_time);
-	ri.set_bus_velocity(q.route_set.bus_velocity);
-	ri.set_bus_wait_time(q.route_set.bus_wait_time);
-
-	*tcs.mutable_route_info() = ri;
-
-
-	if (!tr_) {
-		tr_ = std::make_unique<transport_router::TransportRouter>(route_set_.bus_wait_time,
-			route_set_.bus_velocity,
-			*tc_);
-
-	}
-	auto edges = tr_.get()->GetAllGraph();
-	int edge_count = 0;
-	for (auto item : edges) {
-		tc_serialization::Edge_Route e;
-		e.set_from(item.from);
-		e.set_to(item.to);
-		e.set_weight(item.weight);
-		e.set_transport_id(item.transport_id);
-		e.set_span_count(item.span_count);
-		tcs.add_all_graphs();
-		*tcs.mutable_all_graphs(edge_count++) = e;
-	}
-
-	std::ofstream out(db_file_name, std::ios::binary | std::ios::app);
-
-	tcs.SerializeToOstream(&out);
-
-
-
-}
-
-
-void RequestQueue::Serialize_Map(std::string db_file_name, Query q) {
-	tc_serialization::TransportCatalogue tcs;
-	tc_serialization::MapRenderSettings mrs;
-	mrs.set_width(q.map_set.width);
-	mrs.set_height(q.map_set.height);
-	mrs.set_padding(q.map_set.padding);
-	mrs.set_line_with(q.map_set.line_with);
-	mrs.set_stop_radius(q.map_set.stop_radius);
-	mrs.set_bus_label_font_size(q.map_set.bus_label_font_size);
-	mrs.set_bus_label_offset_first(q.map_set.bus_label_offset.first);
-	mrs.set_bus_label_offset_second(q.map_set.bus_label_offset.second);
-	mrs.set_stop_label_font_size(q.map_set.stop_label_font_size);
-	mrs.set_stop_label_offset_first(q.map_set.stop_label_offset.first);
-	mrs.set_stop_label_offset_second(q.map_set.stop_label_offset.second);
-	tc_serialization::ColorVariant c;
-
-	c.set_type(q.map_set.underlayer_color_diff.color_type);
-	if (q.map_set.underlayer_color_diff.color_type == map_render::TypeColor::STRING) {
-		c.set_color(q.map_set.underlayer_color_diff.color_string);
-	}
-	if (q.map_set.underlayer_color_diff.color_type == map_render::TypeColor::RGB) {
-		c.set_red(q.map_set.underlayer_color_diff.color_r);
-		c.set_green(q.map_set.underlayer_color_diff.color_g);
-		c.set_blue(q.map_set.underlayer_color_diff.color_b);
-	}
-	if (q.map_set.underlayer_color_diff.color_type == map_render::TypeColor::RGBA) {
-		c.set_red(q.map_set.underlayer_color_diff.color_r);
-		c.set_green(q.map_set.underlayer_color_diff.color_g);
-		c.set_blue(q.map_set.underlayer_color_diff.color_b);
-		c.set_opacity(q.map_set.underlayer_color_diff.color_a);
-
-	}
-
-	*mrs.mutable_underlayer_color() = c;
-
-	mrs.set_underlayer_width(q.map_set.underlayer_width);
-
-	for (int i = 0; i < q.map_set.color_palette_diff.size(); i++) {
-		tc_serialization::ColorVariant c;
-
-		c.set_type(q.map_set.color_palette_diff[i].color_type);
-		if (q.map_set.color_palette_diff[i].color_type == map_render::TypeColor::STRING) {
-			c.set_color(q.map_set.color_palette_diff[i].color_string);
-		}
-		if (q.map_set.color_palette_diff[i].color_type == map_render::TypeColor::RGB) {
-			c.set_red(q.map_set.color_palette_diff[i].color_r);
-			c.set_green(q.map_set.color_palette_diff[i].color_g);
-			c.set_blue(q.map_set.color_palette_diff[i].color_b);
-		}
-		if (q.map_set.color_palette_diff[i].color_type == map_render::TypeColor::RGBA) {
-			c.set_red(q.map_set.color_palette_diff[i].color_r);
-			c.set_green(q.map_set.color_palette_diff[i].color_g);
-			c.set_blue(q.map_set.color_palette_diff[i].color_b);
-			c.set_opacity(q.map_set.color_palette_diff[i].color_a);
-
-		}
-
-		mrs.add_color_palette();
-		*mrs.mutable_color_palette(i) = c;
-
-
-	}
-
-	*tcs.mutable_map_settings() = mrs;
-	std::ofstream out(db_file_name, std::ios::binary | std::ios::app);
-
-	tcs.SerializeToOstream(&out);
-
-
-}
-
-
-void RequestQueue::Serialize_TC(std::string db_file_name) {
-	tc_serialization::TransportCatalogue tcs;
-	for (auto stop : tc_->GetAllStops()) {
-		auto new_stop = tcs.add_stops();
-		new_stop->set_name(stop.GetName());
-		new_stop->set_id(stop.GetId());
-		new_stop->mutable_place()->set_lat(stop.GetCoordonates().lat);
-		new_stop->mutable_place()->set_lng(stop.GetCoordonates().lng);
-	}
-	for (auto bus : tc_->GetAllRoutes()) {
-		auto new_bus = tcs.add_buses();
-		new_bus->set_name(bus.GetName());
-		new_bus->set_id(bus.GetId());
-		new_bus->set_is_round(bus.isRound());
-		auto track = bus.GetBusInfo();
-		for (int i = 0; i < bus.GetStopsNum(); i++) {
-			new_bus->add_track();
-			new_bus->mutable_track(i)->set_name(track[i]->GetName()); // имени остановки достаточно
-		}
-	}
-
-	auto dist = tc_->GetAllDistances();
-	for (auto item : dist) {
-		auto d = tcs.add_dist_list();
-		d->set_stop1(item.first.first);
-		d->set_stop2(item.first.second);
-		d->set_dist(item.second);
-
-	}
-
-
-	std::ofstream out(db_file_name, std::ios::binary);
-
-	tcs.SerializeToOstream(&out);
-
-
 }
 
 
@@ -432,7 +144,7 @@ std::vector<RequestQueue::QueryResult> RequestQueue::ProcessQueue() {
 
 				db_file_name = q.name_;
 	
-				Serialize_TC(db_file_name);
+				Serialize_TC(db_file_name, *tc_);
 
 				//tcs.PrintDebugString();
 
@@ -449,7 +161,7 @@ std::vector<RequestQueue::QueryResult> RequestQueue::ProcessQueue() {
 				map_data_.SetMapSettings(q.map_set);
 				map_data_.SetAllroutes(GetAllRoutes());
 				if (db_file_name != "") {
-					Serialize_Map(db_file_name, q);
+					Serialize_Map(db_file_name, q.map_set);
 				}
 
 
@@ -468,7 +180,15 @@ std::vector<RequestQueue::QueryResult> RequestQueue::ProcessQueue() {
 				route_set_.bus_leaving_time = q.route_set.bus_leaving_time;
 
 				if (db_file_name != "") {
-					Serialize_Router(db_file_name, q);
+
+					if (!tr_) {
+						tr_ = std::make_unique<transport_router::TransportRouter>(route_set_.bus_wait_time,
+							route_set_.bus_velocity,
+							*tc_);
+
+					}
+
+					Serialize_Router(db_file_name, q.route_set, *tr_);
 				}
 
 
@@ -488,8 +208,12 @@ std::vector<RequestQueue::QueryResult> RequestQueue::ProcessQueue() {
 				std::ifstream in(q.name_, std::ios::binary);
 				tcs.ParseFromIstream(&in);
 				
-				Deserialize_TC(tcs);
-				Deserialize_Map(tcs);
+				Deserialize_TC(tcs, *tc_);
+				
+				// render_map
+				map_data_.SetMapSettings(Deserialize_Map(tcs));
+				map_data_.SetAllroutes(GetAllRoutes());
+
 
 				QueryResult res_route;
 				res_route.query_type_ = MAP_SETTINGS;
@@ -500,8 +224,13 @@ std::vector<RequestQueue::QueryResult> RequestQueue::ProcessQueue() {
 				QueryResult res_map;
 				res_map.query_type_ = ROUTING_SETTINGS;
 				result.push_back(res_map);
+				std::vector<graph::Edge<double>> edges;
+				route_set_ = Deserialize_Router(tcs, edges);
 
-				Deserialize_Router(tcs);
+				tr_ = std::make_unique<transport_router::TransportRouter>(route_set_.bus_wait_time,
+					route_set_.bus_velocity, edges,
+					*tc_);
+
 			}
 		}
 	}
