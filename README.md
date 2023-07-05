@@ -1,2 +1,2 @@
 # cpp-transport-catalogue
-Финальный проект: транспортный справочник
+Transport catalogue. Used 2 modes: make_base and requests. Serialise database uses protobuf library. in/out uses JSON
