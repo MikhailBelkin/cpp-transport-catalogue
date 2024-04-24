@@ -1,5 +1,5 @@
 # cpp-transport-catalogue
-**Transport catalogue. **
+**Transport catalogue.**
 
 All about bus routes in big city. 
 
