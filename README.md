@@ -11,7 +11,7 @@ Uses 2 modes: make_base and requests.
 Serialises database using protobuf library. For in/out operations uses JSON
 
 
-Builded with cmake. C++17
+Build with cmake. C++17
 
 Tested with 3000+ bus routes.
 
